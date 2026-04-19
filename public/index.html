@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Chalk Room - Drinking Game</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍻</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div class="chalk-container" id="app">
+
+    <!-- Home Screen -->
+    <div id="home-screen" class="screen screen-active">
+      <h1 class="chalk-title">The Chalk Room<br>Drinking Game</h1>
+      <p class="subtitle">Draw the line when you're drunk</p>
+
+      <div class="input-group">
+        <label>Your Name:</label>
+        <input type="text" id="player-name" placeholder="Who's playing?" maxlength="24">
+      </div>
+
+      <div class="input-group icon-selection">
+        <label>Pick your Icon:</label>
+        <div class="icon-carousel">
+          <button id="btn-icon-prev" class="btn-arrow">&lt;</button>
+          <div id="current-icon-display" class="current-icon">🍺</div>
+          <button id="btn-icon-next" class="btn-arrow">&gt;</button>
+        </div>
+      </div>
+
+      <div class="button-group">
+        <button id="btn-create" class="btn btn-chalk">Create Room</button>
+        <div class="divider">
+          <span>~ OR ~</span>
+        </div>
+        <div class="join-group">
+          <input type="text" id="room-code-input" placeholder="CODE" maxlength="4">
+          <button id="btn-join" class="btn btn-chalk">Join</button>
+        </div>
+      </div>
+      <div id="error-message" class="error-msg"></div>
+    </div>
+
+    <!-- Lobby Screen -->
+    <div id="lobby-screen" class="screen">
+      <div class="lobby-header">
+        <div class="room-code-display" id="lobby-code">----</div>
+      </div>
+
+      <div class="players-container">
+        <h3>Players (<span id="player-count">0</span>/8)</h3>
+        <ul id="players-list" class="players-list">
+          <!-- Players injected here by JS -->
+        </ul>
+      </div>
+
+      <div class="lobby-footer">
+        <button id="btn-start" class="btn btn-chalk btn-start" style="display: none;">Start Game!</button>
+        <p id="waiting-msg">Waiting for the host...</p>
+      </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+      <div class="card-container">
+        <div class="chalk-card" id="current-card">
+          <div class="card-type">Drink Card</div>
+          <div class="card-text" id="card-text">Pede ao host para tirar uma carta!</div>
+          <div class="card-action" id="card-action"></div>
+        </div>
+      </div>
+
+      <div class="game-footer">
+        <button id="btn-next-card" class="btn btn-chalk" style="display: none;">Next Card</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <div id="spells-bar" class="spells-bar"></div>
+
+  <div id="spell-modal" class="modal">
+    <div class="modal-content chalk-container" style="max-width: 400px;">
+      <h2 id="spell-modal-title">Spell Name</h2>
+      <div id="spell-modal-icon" style="font-size: 5rem; margin: 15px 0;">🛡️</div>
+      <p id="spell-modal-desc">Description</p>
+      <div style="display:flex; justify-content:center; gap: 15px;">
+        <button class="btn btn-chalk" id="btn-use-spell">USAR</button>
+        <button class="btn btn-chalk" onclick="closeSpellModal()">FECHAR</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+
+</html>

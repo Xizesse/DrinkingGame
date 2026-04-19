@@ -1,0 +1,10 @@
+{
+    "cardProbabilities": {
+        "Drink Card": 0.00,
+        "Voting Card": 0.00,
+        "Dare Card": 0.90,
+        "Event Card": 0.10
+    },
+    "wheelProbability": 0.50,
+    "spellProbability": 0.990
+}
