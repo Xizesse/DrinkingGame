@@ -1,4 +1,13 @@
 {
+    "testMode": false,
+    "features": {
+        "Drink Card": true,
+        "Voting Card": true,
+        "Dare Card": true,
+        "Event Card": true,
+        "spinWheel": true,
+        "spells": true
+    },
     "cardProbabilities": {
         "Drink Card": 0.30,
         "Voting Card": 0.30,

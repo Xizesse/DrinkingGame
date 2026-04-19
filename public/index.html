@@ -17,30 +17,21 @@
     <!-- Home Screen -->
     <div id="home-screen" class="screen screen-active">
       <h1 class="chalk-title">The Chalk Room<br>Drinking Game</h1>
-      <p class="subtitle">Draw the line when you're drunk</p>
+      <p class="subtitle">Traça o limite quando estiveres bêbedo</p>
 
       <div class="input-group">
-        <label>Your Name:</label>
-        <input type="text" id="player-name" placeholder="Who's playing?" maxlength="24">
-      </div>
-
-      <div class="input-group icon-selection">
-        <label>Pick your Icon:</label>
-        <div class="icon-carousel">
-          <button id="btn-icon-prev" class="btn-arrow">&lt;</button>
-          <div id="current-icon-display" class="current-icon">🍺</div>
-          <button id="btn-icon-next" class="btn-arrow">&gt;</button>
-        </div>
+        <label>O teu Nome:</label>
+        <input type="text" id="player-name" placeholder="Quem vai jogar?" maxlength="24">
       </div>
 
       <div class="button-group">
-        <button id="btn-create" class="btn btn-chalk">Create Room</button>
+        <button id="btn-create" class="btn btn-chalk">Criar Sala</button>
         <div class="divider">
-          <span>~ OR ~</span>
+          <span>~ OU ~</span>
         </div>
         <div class="join-group">
-          <input type="text" id="room-code-input" placeholder="CODE" maxlength="4">
-          <button id="btn-join" class="btn btn-chalk">Join</button>
+          <input type="text" id="room-code-input" placeholder="CÓDIGO" maxlength="4">
+          <button id="btn-join" class="btn btn-chalk">Entrar</button>
         </div>
       </div>
       <div id="error-message" class="error-msg"></div>
@@ -49,25 +40,45 @@
     <!-- Lobby Screen -->
     <div id="lobby-screen" class="screen">
       <div class="lobby-header">
-        <div class="room-code-display" id="lobby-code">----</div>
+        <h2>Código da Sala: <span id="lobby-code">----</span></h2>
+      </div>
+
+      <!-- Customization Box -->
+      <div class="customization-box">
+        <div class="input-group icon-selection">
+          <label>O teu Ícone:</label>
+          <div class="icon-carousel">
+            <button id="btn-icon-prev-lobby" class="btn-arrow">&lt;</button>
+            <div id="lobby-icon-display" class="current-icon">🍺</div>
+            <button id="btn-icon-next-lobby" class="btn-arrow">&gt;</button>
+          </div>
+        </div>
+        <div class="input-group color-selection">
+          <label>A tua Cor:</label>
+          <div id="color-swatches" class="color-swatches">
+            <!-- Colors injected by JS -->
+          </div>
+        </div>
       </div>
 
       <div class="players-container">
-        <h3>Players (<span id="player-count">0</span>/8)</h3>
+        <h3>Jogadores (<span id="player-count">0</span>/8)</h3>
         <ul id="players-list" class="players-list">
           <!-- Players injected here by JS -->
         </ul>
       </div>
 
       <div class="lobby-footer">
-        <button id="btn-start" class="btn btn-chalk btn-start" style="display: none;">Start Game!</button>
-        <p id="waiting-msg">Waiting for the host...</p>
+        <button id="btn-start" class="btn btn-chalk btn-start" style="display: none;">Começar Jogo!</button>
+        <p id="waiting-msg">À espera do anfitrião...</p>
       </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen">
-      <div class="card-container">
+      <div id="top-players-bar" class="top-players-bar"></div>
+
+      <div id="card-display" class="card-display">
         <div class="chalk-card" id="current-card">
           <div class="card-type">Drink Card</div>
           <div class="card-text" id="card-text">Pede ao host para tirar uma carta!</div>
@@ -76,7 +87,7 @@
       </div>
 
       <div class="game-footer">
-        <button id="btn-next-card" class="btn btn-chalk" style="display: none;">Next Card</button>
+        <button id="btn-next-card" class="btn btn-chalk" style="display: none;">Próxima Carta</button>
       </div>
     </div>
   </div>
@@ -90,14 +101,21 @@
       <div id="spell-modal-icon" style="font-size: 5rem; margin: 15px 0;">🛡️</div>
       <p id="spell-modal-desc">Description</p>
       <div style="display:flex; justify-content:center; gap: 15px;">
-        <button class="btn btn-chalk" id="btn-use-spell">USAR</button>
+        <button id="btn-use-spell" class="btn btn-chalk" style="margin-right: 15px;">USAR</button>
         <button class="btn btn-chalk" onclick="closeSpellModal()">FECHAR</button>
       </div>
     </div>
   </div>
 
+  <div id="host-disconnected-overlay" class="modal">
+    <div class="modal-content" style="border-color: #ff6b6b; color: #ff6b6b;">
+      <h2>⚠️ Pausa</h2>
+      <p>O Anfitrião perdeu a ligação... À espera que ele reentre na sessão para o jogo retomar!</p>
+    </div>
+  </div>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script src="/client.js"></script>
 </body>
 
 </html>

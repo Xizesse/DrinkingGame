@@ -401,6 +401,40 @@ input::placeholder {
   margin-bottom: 20px;
 }
 
+.customization-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px dashed var(--chalk-dim);
+  border-radius: 15px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.color-swatches {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.swatch {
+  width: 35px;
+  height: 35px;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.2s, border-color 0.2s;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.swatch:hover {
+  transform: scale(1.1);
+}
+
+.swatch.selected {
+  border-color: var(--chalk-white);
+  transform: scale(1.2);
+}
+
 @keyframes shake {
   0% {
     transform: translate(1px, 1px) rotate(0deg);
@@ -552,4 +586,42 @@ input::placeholder {
   font-size: 1.6rem;
   margin-bottom: 25px;
   color: var(--chalk-dim);
+}
+
+.top-players-bar {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  z-index: 100;
+}
+
+.top-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--chalk-white);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.3s, filter 0.3s;
+  background: var(--bg-color);
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.top-icon-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.ghost-icon {
+  opacity: 0.3;
+  filter: grayscale(100%);
 }

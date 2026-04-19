@@ -21,15 +21,52 @@ const cardText = document.getElementById('card-text');
 const cardAction = document.getElementById('card-action');
 const btnNextCard = document.getElementById('btn-next-card');
 
-const currentIconDisplay = document.getElementById('current-icon-display');
+const currentIconDisplay = document.getElementById('lobby-icon-display');
+const colorSwatches = document.getElementById('color-swatches');
 
 let currentName = '';
 let currentRoomCode = '';
 let globalPlayers = [];
 let isLocalHost = false;
 
+let myToken = localStorage.getItem('chalkDrinkingGameToken');
+if (!myToken) {
+    myToken = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    localStorage.setItem('chalkDrinkingGameToken', myToken);
+}
+
 let mySpells = [];
 let selectedSpellIndex = -1;
+
+const chalkColors = [
+    '#ffffff', // White
+    '#ff6b6b', // Red
+    '#a8df65', // Green
+    '#74b9ff', // Blue
+    '#a29bfe', // Purple
+    '#fdcb6e'  // Yellow
+];
+let myColor = chalkColors[0];
+
+// Core token handshake on boot
+socket.emit('reconnectAttempt', { token: myToken });
+socket.on('reconnected', ({ room, player }) => {
+    currentRoomCode = room.id;
+    currentName = player.name;
+    isLocalHost = player.isHost;
+    mySpells = []; // Or ideally, sync from server if it supported inventory storage
+    updatePlayersList(room.players);
+
+    if (room.status === 'playing') {
+        screenHome.classList.remove('screen-active');
+        screenLobby.classList.remove('screen-active');
+        screenGame.classList.add('screen-active');
+        window.renderTopBarPlayers(room.players);
+        window.renderSpells();
+    } else {
+        enterLobby(room);
+    }
+});
 
 window.voteFor = function (id) {
     socket.emit('votePlayer', { code: currentRoomCode, targetId: id });
@@ -51,44 +88,68 @@ currentIconDisplay.innerHTML = currentIcon;
 
 // --- Event Listeners ---
 
-// Icon selection
-document.getElementById('btn-icon-prev').addEventListener('click', () => {
+// Icon selection in Lobby
+document.getElementById('btn-icon-prev-lobby').addEventListener('click', () => {
     currentIconIndex = (currentIconIndex - 1 + iconList.length) % iconList.length;
     currentIcon = iconList[currentIconIndex];
-    currentIconDisplay.innerHTML = currentIcon;
+    if (currentIconDisplay) currentIconDisplay.innerHTML = currentIcon;
+    syncCustomization();
 });
 
-document.getElementById('btn-icon-next').addEventListener('click', () => {
+document.getElementById('btn-icon-next-lobby').addEventListener('click', () => {
     currentIconIndex = (currentIconIndex + 1) % iconList.length;
     currentIcon = iconList[currentIconIndex];
-    currentIconDisplay.innerHTML = currentIcon;
+    if (currentIconDisplay) currentIconDisplay.innerHTML = currentIcon;
+    syncCustomization();
 });
+
+function syncCustomization() {
+    if (currentRoomCode) {
+        socket.emit('updatePlayerCustomization', {
+            code: currentRoomCode,
+            icon: currentIcon,
+            color: myColor
+        });
+    }
+}
+
+function renderColorSelector() {
+    if (!colorSwatches) return;
+    colorSwatches.innerHTML = '';
+    chalkColors.forEach(color => {
+        const swatch = document.createElement('div');
+        swatch.className = 'swatch';
+        if (color === myColor) swatch.classList.add('selected');
+        swatch.style.backgroundColor = color;
+        swatch.onclick = () => {
+            myColor = color;
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+            swatch.classList.add('selected');
+            syncCustomization();
+        };
+        colorSwatches.appendChild(swatch);
+    });
+}
 
 btnCreate.addEventListener('click', () => {
     const name = inputName.value.trim();
     if (!name) {
-        showError("Please enter your name!");
+        showError("Mete o teu nome seu bêbado!");
         return;
     }
     currentName = name;
-    socket.emit('createRoom', { playerName: name, icon: currentIcon });
+    socket.emit('createRoom', { playerName: name, icon: currentIcon, color: myColor, token: myToken });
 });
 
 btnJoin.addEventListener('click', () => {
     const name = inputName.value.trim();
-    const code = inputRoom.value.trim();
-
-    if (!name) {
-        showError("Please enter your name!");
+    const code = inputRoom.value.trim().toUpperCase();
+    if (!name || code.length !== 4) {
+        showError("Nome e e/ou código da sala errados seu bêbado!");
         return;
     }
-    if (!code) {
-        showError("Please enter a room code!");
-        return;
-    }
-
     currentName = name;
-    socket.emit('joinRoom', { code, playerName: name, icon: currentIcon });
+    socket.emit('joinRoom', { code, playerName: name, icon: currentIcon, color: myColor, token: myToken });
 });
 
 btnStart.addEventListener('click', () => {
@@ -124,6 +185,7 @@ socket.on('error', (err) => {
 socket.on('gameStarted', () => {
     screenLobby.classList.remove('screen-active');
     screenGame.classList.add('screen-active');
+    window.renderTopBarPlayers(globalPlayers);
 });
 
 function playBang() {
@@ -147,47 +209,6 @@ function playBang() {
 
     document.getElementById('current-card').classList.add('shake-anim');
     setTimeout(() => document.getElementById('current-card').classList.remove('shake-anim'), 500);
-}
-
-window.showToast = function (msg, duration = 4000) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerText = msg;
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transition = 'opacity 0.3s';
-        setTimeout(() => toast.remove(), 300);
-    }, duration);
-}
-
-window.renderSpells = function () {
-    const bar = document.getElementById('spells-bar');
-    if (!bar) return;
-    bar.innerHTML = '';
-    mySpells.forEach((spell, i) => {
-        const btn = document.createElement('button');
-        btn.className = 'spell-btn';
-        btn.innerHTML = spell.icon;
-        btn.onclick = () => window.openSpellModal(i);
-        bar.appendChild(btn);
-    });
-}
-
-window.openSpellModal = function (index) {
-    selectedSpellIndex = index;
-    const spell = mySpells[index];
-    document.getElementById('spell-modal-title').textContent = spell.name;
-    document.getElementById('spell-modal-icon').innerHTML = spell.icon;
-    document.getElementById('spell-modal-desc').textContent = spell.description;
-    document.getElementById('spell-modal').style.display = 'flex';
-}
-
-window.closeSpellModal = function () {
-    document.getElementById('spell-modal').style.display = 'none';
 }
 
 window.showToast = function (msg, duration = 4000) {
@@ -298,6 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+socket.on('serverConfig', (config) => {
+    if (config.testMode && !currentRoomCode) {
+        currentName = "Tester_" + Math.floor(Math.random() * 1000);
+        const randomIcon = `<img src="icons/icon${Math.floor(Math.random() * 4) + 1}.png" class="p-icon">`;
+        socket.emit('joinTestRoom', { playerName: currentName, icon: randomIcon, token: myToken });
+    }
+});
+
 socket.on('spellGranted', (spell) => {
     mySpells.push(spell);
     window.renderSpells();
@@ -309,10 +338,28 @@ socket.on('spellUsed', ({ player, spell, message }) => {
 });
 
 socket.on('newCard', (card) => {
-    cardText.textContent = card.text;
+    cardText.innerHTML = card.text;
+
+    const typeEl = document.querySelector('.card-type');
+    if (typeEl) {
+        if (card.type === "Drink Card") {
+            typeEl.textContent = "CARTA DE BEBIDA";
+            typeEl.style.color = "#74b9ff";
+        } else if (card.type === "Voting Card") {
+            typeEl.textContent = "VOTAÇÃO";
+            typeEl.style.color = "#a8df65";
+        } else if (card.type === "Event Card") {
+            typeEl.textContent = "EVENTO";
+            typeEl.style.color = "#ff6b6b";
+        } else if (card.type === "Dare Card") {
+            typeEl.textContent = "DESAFIO";
+            typeEl.style.color = "#a29bfe";
+        }
+    }
 
     if (card.type === "Drink Card") {
-        cardAction.innerHTML = `Bebe 🍺 (${card.drinks})`;
+        const beerEmojis = '🍺'.repeat(card.drinks);
+        cardAction.innerHTML = `Bebe ${beerEmojis}`;
     } else if (card.type === "Voting Card") {
         let votingHtml = `<div class="timer" id="timer-display">${card.time}</div>`;
         votingHtml += `<div class="voting-list">`;
@@ -341,12 +388,12 @@ socket.on('newCard', (card) => {
         if (isLocalHost) {
             dareHtml += `
             <div style="display:flex; justify-content: space-evenly; gap: 15px; margin-top:20px;">
-                <button class="btn-chalk" style="border-color: #a8df65; color: #a8df65;" onclick="dareResult('did_it')">They did it!</button>
-                <button class="btn-chalk" style="border-color: #ff6b6b; color: #ff6b6b;" onclick="dareResult('drank')">They drank</button>
+                <button class="btn-chalk" style="border-color: #a8df65; color: #a8df65;" onclick="dareResult('did_it')">Cumpriu!</button>
+                <button class="btn-chalk" style="border-color: #ff6b6b; color: #ff6b6b;" onclick="dareResult('drank')">Bebeu</button>
             </div>
             `;
         } else {
-            dareHtml += `<div class="subtext">A aguardar a decisão do host...</div>`;
+            dareHtml += `<div class="subtext">A aguardar a decisão do anfitrião...</div>`;
         }
         cardAction.innerHTML = dareHtml;
     }
@@ -359,8 +406,14 @@ socket.on('timerUpdate', (t) => {
 
 socket.on('cardResults', (data) => {
     const statsHtml = data.stats.map(s => {
-        const voterIcons = s.voters.map(v => v.icon).join(' ');
-        return `<div>${s.player.icon} ${s.player.name}: ${s.count} votos ${voterIcons ? ' <span style="font-size:1rem">' + voterIcons + '</span>' : ''}</div>`;
+        const voterIcons = s.voters.map(v => `<div style="transform:scale(0.8); margin: -5px;">${v.icon}</div>`).join('');
+        let shortName = s.player.name;
+        if (shortName.length > 8) shortName = shortName.substring(0, 6) + '..';
+
+        return `<div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 10px;">
+                  ${s.player.icon} <span style="font-size:1.6rem; color: ${s.player.color || '#ffffff'};">${shortName}</span>
+                  ${voterIcons ? `<div style="display:flex; margin-left: 10px;">${voterIcons}</div>` : ''}
+                </div>`;
     }).join("");
 
     cardAction.innerHTML = `
@@ -384,6 +437,7 @@ function enterLobby(room) {
     currentRoomCode = room.id;
     lobbyCode.textContent = room.id;
 
+    renderColorSelector();
     updatePlayersList(room.players);
 }
 
@@ -391,6 +445,8 @@ function updatePlayersList(players) {
     globalPlayers = players;
     playersList.innerHTML = '';
     playerCount.textContent = players.length;
+
+    window.renderTopBarPlayers(players);
 
     let isHost = false;
 
@@ -404,6 +460,7 @@ function updatePlayersList(players) {
 
         const nameSpan = document.createElement('span');
         nameSpan.textContent = p.name;
+        nameSpan.style.color = p.color || '#ffffff';
         if (p.id === socket.id) nameSpan.textContent += " (You)";
         li.appendChild(nameSpan);
 
@@ -414,7 +471,7 @@ function updatePlayersList(players) {
             li.appendChild(hostBadge);
 
             // Check if this client is the host
-            if (p.id === socket.id) isHost = true;
+            if (p.isHost) isHost = true;
         }
 
         playersList.appendChild(li);
@@ -439,3 +496,26 @@ function updatePlayersList(players) {
         waitingMsg.textContent = 'Waiting for the host...';
     }
 }
+
+window.renderTopBarPlayers = function (players) {
+    const bar = document.getElementById('top-players-bar');
+    if (!bar) return;
+    bar.innerHTML = players.map(p => {
+        let opacityClass = p.disconnected ? 'ghost-icon' : '';
+        let colorStyle = `border-color: ${p.color || '#ffffff'};`;
+        return `<div class="top-icon-wrapper ${opacityClass}" title="${p.name}" style="${colorStyle}">${p.icon}</div>`;
+    }).join("");
+};
+
+socket.on('playerStatusUpdate', (players) => {
+    globalPlayers = players;
+    window.renderTopBarPlayers(players);
+});
+
+socket.on('hostDisconnected', () => {
+    document.getElementById('host-disconnected-overlay').style.display = 'flex';
+});
+
+socket.on('hostReconnected', () => {
+    document.getElementById('host-disconnected-overlay').style.display = 'none';
+});

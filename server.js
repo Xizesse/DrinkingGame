@@ -13,6 +13,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Simple in-memory store for rooms
 const rooms = {};
+const socketMap = {};
 
 // Spells Database
 const spells = [
@@ -54,10 +55,15 @@ function drawNextCard(code, io) {
         finishEvent(code, io);
       }
     }, 1000);
+    nextCard.interactive = true;
   } else if (nextCard.type === 'Dare Card' && room.players.length > 0) {
-    const p = room.players[Math.floor(Math.random() * room.players.length)];
+    const activePlayers = room.players.filter(pl => !pl.disconnected);
+    const pool = activePlayers.length > 0 ? activePlayers : room.players;
+    const p = pool[Math.floor(Math.random() * pool.length)];
     nextCard.targetPlayer = p;
-    nextCard.text = nextCard.text.replace('{player}', p.name).replace('{drinks}', nextCard.drinks);
+    const beerEmojis = '🍺'.repeat(nextCard.drinks);
+    const coloredName = `<span style="color: ${p.color || '#ffffff'}">${p.name}</span>`;
+    nextCard.text = nextCard.text.replace('{player}', coloredName).replace('{drinks}', beerEmojis);
   }
 
   io.to(code).emit('newCard', nextCard);
@@ -98,6 +104,7 @@ function finishEvent(code, io) {
   const room = rooms[code];
   if (!room) return;
   const card = room.currentCard;
+  const activePlayers = room.players.filter(p => !p.disconnected);
   let consequenceText = "";
 
   if (!card.interactive) {
@@ -105,8 +112,8 @@ function finishEvent(code, io) {
   } else if (card.interactive === 'press') {
     if (room.presses.length === 0) {
       consequenceText = "Ninguém clicou? Todos bebem!";
-    } else if (room.presses.length < room.players.length) {
-      const didNotPressIds = room.players.filter(p => !room.presses.find(x => x.id === p.id)).map(p => p.id);
+    } else if (room.presses.length < activePlayers.length) {
+      const didNotPressIds = activePlayers.filter(p => !room.presses.find(x => x.id === p.id)).map(p => p.id);
       const didNotPressNames = didNotPressIds.map(id => room.players.find(p => p.id === id).name).join(', ');
       consequenceText = `Too slow! (${didNotPressNames}): you are too drunk, drink 🍺(1)`;
     } else {
@@ -146,7 +153,44 @@ function generateRoomCode() {
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('createRoom', ({ playerName, icon }) => {
+  // Provide the current configuration config to the frontend immediately
+  try {
+    const liveConfig = require('./config.json');
+    socket.emit('serverConfig', liveConfig);
+  } catch (e) { }
+
+  socket.on('reconnectAttempt', ({ token }) => {
+    let foundCode = null;
+    let foundPlayer = null;
+    for (const code in rooms) {
+      for (const p of rooms[code].players) {
+        if (p.token === token) {
+          foundCode = code;
+          foundPlayer = p;
+          break;
+        }
+      }
+      if (foundPlayer) break;
+    }
+
+    if (foundPlayer) {
+      socketMap[socket.id] = { code: foundCode, token };
+      foundPlayer.id = socket.id;
+      foundPlayer.disconnected = false;
+      socket.join(foundCode);
+
+      socket.emit('reconnected', { room: rooms[foundCode], player: foundPlayer });
+      io.to(foundCode).emit('playerStatusUpdate', rooms[foundCode].players);
+
+      if (foundPlayer.isHost && rooms[foundCode].status === 'playing') {
+        io.to(foundCode).emit('hostReconnected');
+      }
+    } else {
+      socket.emit('reconnectFailed');
+    }
+  });
+
+  socket.on('createRoom', ({ playerName, icon, color, token }) => {
     let code = generateRoomCode();
     // Ensure uniqueness
     while (rooms[code]) {
@@ -155,27 +199,50 @@ io.on('connection', (socket) => {
 
     rooms[code] = {
       id: code,
-      players: [{ id: socket.id, name: playerName, icon: icon, isHost: true }],
+      players: [{ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: true, token, disconnected: false }],
       status: 'lobby'
     };
 
+    socketMap[socket.id] = { code, token };
     socket.join(code);
     socket.emit('roomCreated', rooms[code]);
   });
 
-  socket.on('joinRoom', ({ code, playerName, icon }) => {
+  socket.on('joinRoom', ({ code, playerName, icon, color, token }) => {
     code = code.toUpperCase();
     if (rooms[code]) {
       if (rooms[code].status === 'playing') {
-        socket.emit('error', { message: 'This game has already started!' });
+        socket.emit('error', { message: 'Este jogo já começou!' });
         return;
       }
-      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, isHost: false });
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: false, token, disconnected: false });
+      socketMap[socket.id] = { code, token };
+
       socket.join(code);
       socket.emit('roomJoined', rooms[code]);
       socket.to(code).emit('playerJoined', rooms[code].players);
     } else {
-      socket.emit('error', { message: 'Room not found' });
+      socket.emit('error', { message: 'Sala não encontrada' });
+    }
+  });
+
+  socket.on('joinTestRoom', ({ playerName, icon, color, token }) => {
+    let code = "TEST";
+    if (!rooms[code]) {
+      rooms[code] = {
+        id: code,
+        players: [{ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: true, token, disconnected: false }],
+        status: 'lobby'
+      };
+      socketMap[socket.id] = { code, token };
+      socket.join(code);
+      socket.emit('roomCreated', rooms[code]);
+    } else {
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: false, token, disconnected: false });
+      socketMap[socket.id] = { code, token };
+      socket.join(code);
+      socket.emit('roomJoined', rooms[code]);
+      socket.to(code).emit('playerJoined', rooms[code].players);
     }
   });
 
@@ -186,13 +253,26 @@ io.on('connection', (socket) => {
       io.to(code).emit('gameStarted');
       drawNextCard(code, io);
     } else if (rooms[code] && rooms[code].players.length < 2) {
-      socket.emit('error', { message: 'Need at least 2 players!' });
+      socket.emit('error', { message: 'Precisas de pelo menos 2 jogadores!' });
     }
   });
 
   socket.on('nextCard', ({ code }) => {
     code = code.toUpperCase();
     drawNextCard(code, io);
+  });
+
+  socket.on('updatePlayerCustomization', ({ code, icon, color }) => {
+    code = code.toUpperCase();
+    const room = rooms[code];
+    if (room && room.status === 'lobby') {
+      const p = room.players.find(pl => pl.id === socket.id);
+      if (p) {
+        p.icon = icon;
+        p.color = color;
+        io.to(code).emit('playerJoined', room.players);
+      }
+    }
   });
 
   socket.on('votePlayer', ({ code, targetId }) => {
@@ -216,6 +296,7 @@ io.on('connection', (socket) => {
       if (!room.presses) room.presses = [];
       if (!room.presses.find(p => p.id === socket.id)) {
         room.presses.push({ id: socket.id, time: Date.now() });
+        room.presses.sort((a, b) => a.time - b.time);
         if (room.currentCard.interactive === 'press' && room.presses.length >= room.players.length) {
           clearInterval(room.timerInterval);
           finishEvent(code, io);
@@ -224,41 +305,47 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('dareResult', ({ code, result }) => {
+  socket.on('dareResult', ({ code, result, targetId }) => {
     code = code.toUpperCase();
     const room = rooms[code];
-    if (room && room.currentCard && room.currentCard.type === 'Dare Card') {
+    if (room && room.currentCard && room.currentCard.type === 'Voting Card') {
+      const p = room.players.find(pl => pl.id === targetId);
+      if (p) {
+        io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} usou Reverse! Anulando Votação 🔄` });
+      }
+    } else if (room && room.currentCard && room.currentCard.type === 'Dare Card') {
       const p = room.currentCard.targetPlayer;
-      let msg = "";
-      if (result === 'did_it') msg = `${p.name} aceitou o desafio! 🏆`;
-      if (result === 'drank') msg = `${p.name} bebeu e recusou o desafio! 🍺(${room.currentCard.drinks})`;
-      io.to(code).emit('cardResults', { stats: [], consequence: msg });
-    }
-  });
 
-  socket.on('dareResult', ({ code, result }) => {
-    code = code.toUpperCase();
-    const room = rooms[code];
-    if (room && room.currentCard && room.currentCard.type === 'Dare Card') {
-      const p = room.currentCard.targetPlayer;
       if (result === 'did_it') {
         io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} aceitou o desafio! 🏆` });
 
-        const spellProbability = config.spellProbability !== undefined ? config.spellProbability : 0.3;
-        if (Math.random() < spellProbability) {
-          const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-          io.to(p.id).emit('spellGranted', randomSpell);
-        }
+        try {
+          const liveConfig = require('./config.json');
+          if (liveConfig.features && liveConfig.features.spells) {
+            const spellProbability = liveConfig.spellProbability !== undefined ? liveConfig.spellProbability : 0.3;
+            if (Math.random() < spellProbability) {
+              const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+              io.to(p.id).emit('spellGranted', randomSpell);
+            }
+          }
+        } catch (e) { }
       }
+
       if (result === 'drank') {
-        const wheelProbability = config.wheelProbability !== undefined ? config.wheelProbability : 0.5;
-        if (Math.random() < wheelProbability) {
-          room.wheelPlayer = p;
-          room.wheelDrinks = room.currentCard.drinks;
-          io.to(code).emit('showWheel', { targetPlayer: p });
-        } else {
-          io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} bebeu e recusou o desafio! 🍺(${room.currentCard.drinks})` });
-        }
+        try {
+          const liveConfig = require('./config.json');
+          if (liveConfig.features && liveConfig.features.spinWheel) {
+            const wheelProbability = liveConfig.wheelProbability !== undefined ? liveConfig.wheelProbability : 0.5;
+            if (Math.random() < wheelProbability) {
+              room.wheelPlayer = p;
+              room.wheelDrinks = room.currentCard.drinks;
+              io.to(code).emit('showWheel', { targetPlayer: p });
+              return;
+            }
+          }
+        } catch (e) { }
+
+        io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} bebeu e recusou o desafio! 🍺(${room.currentCard.drinks})` });
       }
     }
   });
