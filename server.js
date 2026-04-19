@@ -15,12 +15,60 @@ app.use(express.static(path.join(__dirname, 'public')));
 const rooms = {};
 const socketMap = {};
 
+// Colors Database
+const chalkColors = [
+  '#e6194b', // Red
+  '#3cb44b', // Green
+  '#ffe119', // Yellow
+  '#4363d8', // Blue
+  '#f58231', // Orange
+  '#911eb4', // Purple
+  '#42d4f4', // Cyan
+  '#f032e6', // Pink
+  '#bfef45', // Lime
+  '#9a6324', // Brown
+  '#469990', // Teal
+  '#ffffff'  // White
+];
+
 // Spells Database
 const spells = [
   { id: 'shield', icon: '🛡️', name: 'Shield', description: 'Nao tens que beber esta' },
   { id: 'reverse', icon: '🔄', name: 'Reverse', description: 'Faz beber quem te mandou beber' },
   { id: 'double', icon: '✖️2️⃣', name: 'Double', description: 'Duplica os goles que mandas alguem beber' }
 ];
+
+// Helper to resolve {playerN} and {drinks} tags on the server for consistency
+function resolveCardTags(card, players) {
+  if (!card.text) return;
+
+  const playerTags = card.text.match(/\{player[0-9]*\}/g) || [];
+  const uniqueTags = [...new Set(playerTags)];
+  const shuffled = [...players].sort(() => 0.5 - Math.random());
+
+  uniqueTags.forEach((tag, idx) => {
+    const p = shuffled[idx % shuffled.length];
+    const replacement = `<span style="color: ${p.color || '#fff'}"><strong>${p.name}</strong></span>`;
+    card.text = card.text.split(tag).join(replacement);
+    if (card.subtext) card.subtext = card.subtext.split(tag).join(replacement);
+    if (card.consequence) card.consequence = card.consequence.split(tag).join(replacement);
+    if (card.consequences) {
+      card.consequences = card.consequences.map(c => c.split(tag).join(replacement));
+    }
+
+    if (tag === '{player}' || tag === '{player1}') {
+      card.targetPlayer = p;
+    }
+  });
+
+  const drinkStr = `<strong>${card.drinks}</strong>`;
+  card.text = card.text.split('{drinks}').join(drinkStr);
+  if (card.subtext) card.subtext = card.subtext.split('{drinks}').join(drinkStr);
+  if (card.consequence) card.consequence = card.consequence.split('{drinks}').join(drinkStr);
+  if (card.consequences) {
+    card.consequences = card.consequences.map(c => c.split('{drinks}').join(drinkStr));
+  }
+}
 
 function drawNextCard(code, io) {
   const room = rooms[code];
@@ -29,6 +77,7 @@ function drawNextCard(code, io) {
   if (room.timerInterval) clearInterval(room.timerInterval);
 
   const nextCard = getRandomCard();
+  resolveCardTags(nextCard, room.players);
   room.currentCard = nextCard;
 
   if (nextCard.type === 'Voting Card') {
@@ -55,7 +104,6 @@ function drawNextCard(code, io) {
         finishEvent(code, io);
       }
     }, 1000);
-    nextCard.interactive = true;
   } else if (nextCard.type === 'Dare Card' && room.players.length > 0) {
     const activePlayers = room.players.filter(pl => !pl.disconnected);
     const pool = activePlayers.length > 0 ? activePlayers : room.players;
@@ -108,30 +156,36 @@ function finishEvent(code, io) {
   let consequenceText = "";
 
   if (!card.interactive) {
-    consequenceText = card.subtext || "Acabou o tempo!";
+    consequenceText = card.subtext || "Acabou o tempo! Bebam todos para compensar!";
   } else if (card.interactive === 'press') {
     if (room.presses.length === 0) {
-      consequenceText = "Ninguém clicou? Todos bebem!";
+      consequenceText = `Ninguém clicou? Todos bebem 🍺(${card.drinks})!`;
     } else if (room.presses.length < activePlayers.length) {
       const didNotPressIds = activePlayers.filter(p => !room.presses.find(x => x.id === p.id)).map(p => p.id);
-      const didNotPressNames = didNotPressIds.map(id => room.players.find(p => p.id === id).name).join(', ');
-      consequenceText = `Too slow! (${didNotPressNames}): you are too drunk, drink 🍺(1)`;
+      const didNotPressNames = didNotPressIds.map(id => {
+        const p = room.players.find(x => x.id === id);
+        return `<span style="color: ${p.color}">${p.name}</span>`;
+      }).join(', ');
+      consequenceText = `Muito devagar! ${didNotPressNames}: estão muito bêbedos, bebam 🍺(${card.drinks})`;
     } else {
       const r = Math.random();
       if (r > 0.5) {
         const slowest = room.presses[room.presses.length - 1];
         const slowestPlayer = room.players.find(p => p.id === slowest.id);
-        consequenceText = `Slowest (${slowestPlayer.name}): You are too drunk, drink 🍺(1)`;
+        consequenceText = `Mais lento <span style="color: ${slowestPlayer.color}">${slowestPlayer.name}</span>: Estás muito bêbedo, bebe 🍺(${card.drinks})`;
       } else {
         const fastest = room.presses[0];
         const fastestPlayer = room.players.find(p => p.id === fastest.id);
-        consequenceText = `Fastest (${fastestPlayer.name}): You are too sober, drink 🍺(5)`;
+        consequenceText = `Mais rápido <span style="color: ${fastestPlayer.color}">${fastestPlayer.name}</span>: Estás muito sóbrio, bebe 🍺(${card.drinks + 2})`;
       }
     }
   } else if (card.interactive === 'dont_press') {
     if (room.presses.length > 0) {
-      const pressedNames = room.presses.map(x => room.players.find(p => p.id === x.id).name).join(', ');
-      consequenceText = `${pressedNames} pressed it! You have to drink! 🍺(1)`;
+      const pressedNames = room.presses.map(x => {
+        const p = room.players.find(pl => pl.id === x.id);
+        return `<span style="color: ${p.color}">${p.name}</span>`;
+      }).join(', ');
+      consequenceText = `${pressedNames} não aguentou e carregou! Bebam 🍺(${card.drinks})`;
     } else {
       consequenceText = "Ninguém clicou! Muito bem, ninguém bebe!";
     }
@@ -148,6 +202,14 @@ function generateRoomCode() {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
+}
+
+function getAvailableColor(room) {
+  const takenColors = room.players.map(p => p.color);
+  for (const color of chalkColors) {
+    if (!takenColors.includes(color)) return color;
+  }
+  return chalkColors[Math.floor(Math.random() * chalkColors.length)]; // Fallback
 }
 
 io.on('connection', (socket) => {
@@ -197,9 +259,11 @@ io.on('connection', (socket) => {
       code = generateRoomCode();
     }
 
+    const initialColor = color && !rooms[code].players.some(p => p.color === color) ? color : chalkColors[Math.floor(Math.random() * chalkColors.length)];
+
     rooms[code] = {
       id: code,
-      players: [{ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: true, token, disconnected: false }],
+      players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false }],
       status: 'lobby'
     };
 
@@ -215,7 +279,8 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Este jogo já começou!' });
         return;
       }
-      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: false, token, disconnected: false });
+      const assignedColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: assignedColor, isHost: false, token, disconnected: false });
       socketMap[socket.id] = { code, token };
 
       socket.join(code);
@@ -229,16 +294,18 @@ io.on('connection', (socket) => {
   socket.on('joinTestRoom', ({ playerName, icon, color, token }) => {
     let code = "TEST";
     if (!rooms[code]) {
+      const initialColor = color || chalkColors[Math.floor(Math.random() * chalkColors.length)];
       rooms[code] = {
         id: code,
-        players: [{ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: true, token, disconnected: false }],
+        players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false }],
         status: 'lobby'
       };
       socketMap[socket.id] = { code, token };
       socket.join(code);
       socket.emit('roomCreated', rooms[code]);
     } else {
-      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: color || '#ffffff', isHost: false, token, disconnected: false });
+      const initialColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: false, token, disconnected: false });
       socketMap[socket.id] = { code, token };
       socket.join(code);
       socket.emit('roomJoined', rooms[code]);
@@ -267,7 +334,8 @@ io.on('connection', (socket) => {
     const room = rooms[code];
     if (room && room.status === 'lobby') {
       const p = room.players.find(pl => pl.id === socket.id);
-      if (p) {
+      const isTaken = room.players.some(pl => pl.id !== socket.id && pl.color === color);
+      if (p && !isTaken) {
         p.icon = icon;
         p.color = color;
         io.to(code).emit('playerJoined', room.players);
@@ -317,7 +385,8 @@ io.on('connection', (socket) => {
       const p = room.currentCard.targetPlayer;
 
       if (result === 'did_it') {
-        io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} aceitou o desafio! 🏆` });
+        // Skip emitting cardResults for 'did_it' as requested - go straight to next card (via host)
+        // We still grant spells
 
         try {
           const liveConfig = require('./config.json');
@@ -345,7 +414,7 @@ io.on('connection', (socket) => {
           }
         } catch (e) { }
 
-        io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} bebeu e recusou o desafio! 🍺(${room.currentCard.drinks})` });
+        // Skip cardResults for 'drank' unless wheel kicks in
       }
     }
   });

@@ -27,6 +27,7 @@ const colorSwatches = document.getElementById('color-swatches');
 let currentName = '';
 let currentRoomCode = '';
 let globalPlayers = [];
+let globalCurrentCard = null;
 let isLocalHost = false;
 
 let myToken = localStorage.getItem('chalkDrinkingGameToken');
@@ -39,14 +40,20 @@ let mySpells = [];
 let selectedSpellIndex = -1;
 
 const chalkColors = [
-    '#ffffff', // White
-    '#ff6b6b', // Red
-    '#a8df65', // Green
-    '#74b9ff', // Blue
-    '#a29bfe', // Purple
-    '#fdcb6e'  // Yellow
+    '#e6194b', // Red
+    '#3cb44b', // Green
+    '#ffe119', // Yellow
+    '#4363d8', // Blue
+    '#f58231', // Orange
+    '#911eb4', // Purple
+    '#42d4f4', // Cyan
+    '#f032e6', // Pink
+    '#bfef45', // Lime
+    '#9a6324', // Brown
+    '#469990', // Teal
+    '#ffffff'  // White
 ];
-let myColor = chalkColors[0];
+let myColor = chalkColors[Math.floor(Math.random() * chalkColors.length)];
 
 // Core token handshake on boot
 socket.emit('reconnectAttempt', { token: myToken });
@@ -76,15 +83,17 @@ window.voteFor = function (id) {
     if (clicked) clicked.classList.add('selected-vote');
 };
 
-const iconList = [
-    '<img src="icons/icon1.png" class="p-icon">',
-    '<img src="icons/icon2.png" class="p-icon">',
-    '<img src="icons/icon3.png" class="p-icon">',
-    '<img src="icons/icon4.png" class="p-icon">'
-];
+const iconList = ['🍺', '🍷', '🥃', '🍸', '🍹', '🧉', '🍶', '🍾', '🧊', '🍻', '🥂', '🫧'];
 let currentIconIndex = Math.floor(Math.random() * iconList.length);
 let currentIcon = iconList[currentIconIndex];
-currentIconDisplay.innerHTML = currentIcon;
+
+window.renderIcon = function (emoji, color, sizeClass = '') {
+    // legacy fix: if emoji starts with <img, it's an old image icon, replace it
+    let cleanEmoji = (emoji && emoji.includes('<img')) ? '🍺' : emoji;
+    return `<div class="p-icon-circle ${sizeClass}" style="background-color: ${color || '#ffffff'}">${cleanEmoji || '🍺'}</div>`;
+}
+
+currentIconDisplay.innerHTML = window.renderIcon(currentIcon, myColor, 'lg');
 
 // --- Event Listeners ---
 
@@ -92,14 +101,14 @@ currentIconDisplay.innerHTML = currentIcon;
 document.getElementById('btn-icon-prev-lobby').addEventListener('click', () => {
     currentIconIndex = (currentIconIndex - 1 + iconList.length) % iconList.length;
     currentIcon = iconList[currentIconIndex];
-    if (currentIconDisplay) currentIconDisplay.innerHTML = currentIcon;
+    if (currentIconDisplay) currentIconDisplay.innerHTML = window.renderIcon(currentIcon, myColor, 'lg');
     syncCustomization();
 });
 
 document.getElementById('btn-icon-next-lobby').addEventListener('click', () => {
     currentIconIndex = (currentIconIndex + 1) % iconList.length;
     currentIcon = iconList[currentIconIndex];
-    if (currentIconDisplay) currentIconDisplay.innerHTML = currentIcon;
+    if (currentIconDisplay) currentIconDisplay.innerHTML = window.renderIcon(currentIcon, myColor, 'lg');
     syncCustomization();
 });
 
@@ -116,17 +125,32 @@ function syncCustomization() {
 function renderColorSelector() {
     if (!colorSwatches) return;
     colorSwatches.innerHTML = '';
+
+    // Get colors taken by other players
+    const takenColors = (globalPlayers || [])
+        .filter(p => p.id !== socket.id)
+        .map(p => p.color);
+
     chalkColors.forEach(color => {
         const swatch = document.createElement('div');
         swatch.className = 'swatch';
+
+        const isTaken = takenColors.includes(color);
         if (color === myColor) swatch.classList.add('selected');
+        if (isTaken) swatch.classList.add('taken');
+
         swatch.style.backgroundColor = color;
-        swatch.onclick = () => {
-            myColor = color;
-            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
-            swatch.classList.add('selected');
-            syncCustomization();
-        };
+
+        if (!isTaken) {
+            swatch.onclick = () => {
+                myColor = color;
+                document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+                swatch.classList.add('selected');
+                if (currentIconDisplay) currentIconDisplay.innerHTML = window.renderIcon(currentIcon, myColor, 'lg');
+                syncCustomization();
+            };
+        }
+
         colorSwatches.appendChild(swatch);
     });
 }
@@ -252,6 +276,17 @@ window.closeSpellModal = function () {
     document.getElementById('spell-modal').style.display = 'none';
 }
 
+window.openSpellGrantedModal = function (spell) {
+    document.getElementById('spell-granted-title').textContent = spell.name;
+    document.getElementById('spell-granted-icon').innerHTML = spell.icon;
+    document.getElementById('spell-granted-desc').textContent = spell.description;
+    document.getElementById('spell-granted-modal').style.display = 'flex';
+}
+
+window.closeSpellGrantedModal = function () {
+    document.getElementById('spell-granted-modal').style.display = 'none';
+}
+
 window.pressEvent = function () {
     // vamos forçar a vibração logo no instante limite em que clicas no botão:
     if (navigator.vibrate) navigator.vibrate([500]);
@@ -330,7 +365,7 @@ socket.on('serverConfig', (config) => {
 socket.on('spellGranted', (spell) => {
     mySpells.push(spell);
     window.renderSpells();
-    window.showToast(`✨ Ganhaste um Feitiço: ${spell.icon} ${spell.name}!`);
+    window.openSpellGrantedModal(spell);
 });
 
 socket.on('spellUsed', ({ player, spell, message }) => {
@@ -338,6 +373,7 @@ socket.on('spellUsed', ({ player, spell, message }) => {
 });
 
 socket.on('newCard', (card) => {
+    globalCurrentCard = card;
     cardText.innerHTML = card.text;
 
     const typeEl = document.querySelector('.card-type');
@@ -357,17 +393,20 @@ socket.on('newCard', (card) => {
         }
     }
 
+    // Server now handles tag replacement ({player}, {drinks} etc.)
+    cardText.innerHTML = card.text;
+
     if (card.type === "Drink Card") {
-        const beerEmojis = '🍺'.repeat(card.drinks);
-        cardAction.innerHTML = `Bebe ${beerEmojis}`;
+        cardAction.innerHTML = '';
     } else if (card.type === "Voting Card") {
         let votingHtml = `<div class="timer" id="timer-display">${card.time}</div>`;
         votingHtml += `<div class="voting-list">`;
         globalPlayers.forEach(p => {
+            const playerIconHtml = window.renderIcon(p.icon, p.color);
             if (p.id !== socket.id) { // optional: don't vote for self
-                votingHtml += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">${p.icon} ${p.name}</button>`;
+                votingHtml += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">${playerIconHtml} ${p.name}</button>`;
             } else {
-                votingHtml += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">${p.icon} ${p.name} (You)</button>`;
+                votingHtml += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">${playerIconHtml} ${p.name} (You)</button>`;
             }
         });
         votingHtml += `</div>`;
@@ -397,6 +436,14 @@ socket.on('newCard', (card) => {
         }
         cardAction.innerHTML = dareHtml;
     }
+
+    // Show drink amount if available and it's not a direct voting/event/dare phase
+    if (card.drinks > 0 && card.type !== 'Voting Card' && card.type !== 'Event Card' && card.type !== 'Dare Card') {
+        const beerEmojis = '🍺'.repeat(Math.min(card.drinks, 5));
+        const extra = card.drinks > 5 ? '...' : '';
+        const drinkHtml = `<div class="card-drink-amount">Bebe ${beerEmojis}${extra} (${card.drinks})</div>`;
+        cardAction.innerHTML += drinkHtml;
+    }
 });
 
 socket.on('timerUpdate', (t) => {
@@ -405,14 +452,22 @@ socket.on('timerUpdate', (t) => {
 });
 
 socket.on('cardResults', (data) => {
+    let consequence = data.consequence || "";
+    // If we have a current card with drinks, replace the tag
+    if (consequence.includes('{drinks}') && globalCurrentCard && globalCurrentCard.drinks) {
+        consequence = consequence.replace('{drinks}', `<strong>${globalCurrentCard.drinks}</strong>`);
+    }
+
     const statsHtml = data.stats.map(s => {
-        const voterIcons = s.voters.map(v => `<div style="transform:scale(0.8); margin: -5px;">${v.icon}</div>`).join('');
+        const voterIcons = s.voters.map(v => `<div style="transform:scale(1.1); margin: 0 2px;">${window.renderIcon(v.icon, v.color, 'sm')}</div>`).join('');
         let shortName = s.player.name;
         if (shortName.length > 8) shortName = shortName.substring(0, 6) + '..';
 
-        return `<div style="display: flex; align-items: center; justify-content: center; gap: 5px; margin-bottom: 10px;">
-                  ${s.player.icon} <span style="font-size:1.6rem; color: ${s.player.color || '#ffffff'};">${shortName}</span>
-                  ${voterIcons ? `<div style="display:flex; margin-left: 10px;">${voterIcons}</div>` : ''}
+        const targetIconHtml = window.renderIcon(s.player.icon, s.player.color);
+
+        return `<div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;">
+                  ${targetIconHtml} <span style="font-size:1.8rem; color: ${s.player.color || '#ffffff'};">${shortName}</span>
+                  ${voterIcons ? `<div style="display:flex; margin-left: 15px;">${voterIcons}</div>` : ''}
                 </div>`;
     }).join("");
 
@@ -447,6 +502,7 @@ function updatePlayersList(players) {
     playerCount.textContent = players.length;
 
     window.renderTopBarPlayers(players);
+    renderColorSelector();
 
     let isHost = false;
 
@@ -455,7 +511,7 @@ function updatePlayersList(players) {
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'player-icon';
-        iconSpan.innerHTML = p.icon || '<img src="icons/icon1.png" class="p-icon">';
+        iconSpan.innerHTML = window.renderIcon(p.icon, p.color, 'sm');
         li.appendChild(iconSpan);
 
         const nameSpan = document.createElement('span');
@@ -471,7 +527,7 @@ function updatePlayersList(players) {
             li.appendChild(hostBadge);
 
             // Check if this client is the host
-            if (p.isHost) isHost = true;
+            if (p.isHost && p.id === socket.id) isHost = true;
         }
 
         playersList.appendChild(li);
@@ -502,8 +558,7 @@ window.renderTopBarPlayers = function (players) {
     if (!bar) return;
     bar.innerHTML = players.map(p => {
         let opacityClass = p.disconnected ? 'ghost-icon' : '';
-        let colorStyle = `border-color: ${p.color || '#ffffff'};`;
-        return `<div class="top-icon-wrapper ${opacityClass}" title="${p.name}" style="${colorStyle}">${p.icon}</div>`;
+        return `<div class="${opacityClass}" title="${p.name}" style="margin: 0 2px;">${window.renderIcon(p.icon, p.color)}</div>`;
     }).join("");
 };
 

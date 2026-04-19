@@ -1,0 +1,38 @@
+[
+    {
+        "text": "Quem é o mais velho?",
+        "time": 15,
+        "drinks": 2,
+        "consequences": [
+            "Quem falhou tira um penalty",
+            "O mais velho bebe {drinks}"
+        ]
+    },
+    {
+        "text": "Quem é o mais novo?",
+        "time": 15,
+        "drinks": 2,
+        "consequences": [
+            "A maioria dita a lei: o mais votado bebe {drinks}",
+            "Quem não votou no mais novo bebe 1"
+        ]
+    },
+    {
+        "text": "Quem foi o ultimo a usar a casa de banho?",
+        "time": 15,
+        "drinks": 3,
+        "consequences": [
+            "Bebem todos os que erraram {drinks}",
+            "O culpado distribui {drinks}"
+        ]
+    },
+    {
+        "text": "Quem está mais bêbado?",
+        "time": 15,
+        "drinks": 2,
+        "consequences": [
+            "O mais votado bebe {drinks}",
+            "O mais votado escolhe a sua próxima vítima para beber {drinks}"
+        ]
+    }
+]

@@ -1,0 +1,30 @@
+[
+    {
+        "text": "Jogo do sério!",
+        "subtext": "Quem se rir bebe {drinks}",
+        "time": 10,
+        "drinks": 1,
+        "interactive": false
+    },
+    {
+        "text": "O chão é lava!",
+        "subtext": "O ultimo a tirar os pés do chão bebe {drinks}",
+        "time": 5,
+        "drinks": 1,
+        "interactive": false
+    },
+    {
+        "text": "CARREGA NO BOTÃO!",
+        "subtext": "Preparados...",
+        "time": 5,
+        "drinks": 1,
+        "interactive": "press"
+    },
+    {
+        "text": "não toques no botão...",
+        "subtext": "Quem carregar bebe {drinks}",
+        "time": 5,
+        "drinks": 1,
+        "interactive": "dont_press"
+    }
+]

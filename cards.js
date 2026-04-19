@@ -1,18 +1,22 @@
+const fs = require('fs');
+const path = require('path');
+const config = require('./config.json');
+
 class DrinkCard {
-    constructor(text, drinks = 1) {
-        this.text = text;
-        this.drinks = drinks;
+    constructor(data = {}) {
+        this.text = data.text || "";
+        this.drinks = data.drinks || 1;
         this.type = "Drink Card";
     }
 }
 
 class VotingCard {
-    constructor(text, time = 15, consequences = null) {
-        this.text = text;
-        this.time = time;
+    constructor(data = {}) {
+        this.text = data.text || "";
+        this.time = data.time || 15;
+        this.drinks = data.drinks || 1;
         this.type = "Voting Card";
-
-        this.consequences = consequences || [
+        this.consequences = data.consequences || [
             "Quem errou bebe",
             "Quem acertou bebe",
             "O mais votado bebe",
@@ -22,59 +26,62 @@ class VotingCard {
 }
 
 class EventCard {
-    constructor(text, subtext = "", time = 5, interactive = false) {
-        this.text = text;
-        this.subtext = subtext;
-        this.time = time;
-        this.interactive = interactive; // false, 'press', 'dont_press'
+    constructor(data = {}) {
+        this.text = data.text || "";
+        this.subtext = data.subtext || "";
+        this.time = data.time || 5;
+        this.drinks = data.drinks || 1;
+        this.interactive = data.interactive || false; // false, 'press', 'dont_press'
         this.type = "Event Card";
     }
 }
 
 class DareCard {
-    constructor(text, drinksIfFail) {
-        this.text = text;
-        this.drinks = drinksIfFail;
+    constructor(data = {}) {
+        this.text = data.text || "";
+        this.drinks = data.drinks || 1;
         this.type = "Dare Card";
     }
 }
 
-const cardDatabase = [
-    // Drink Cards
-    new DrinkCard('Quem já vomitou na casa de outra pessoa', 1),
-    new DrinkCard('Quem já vomitou em roupa', 1),
-    new DrinkCard('Quem já foi apanhado pelos pais', 1),
-    new DrinkCard('Quem já apanhou os pais', 1),
+let cardDatabase = [];
 
-    // Voting Cards
-    new VotingCard('Quem é o mais velho?', 15, ["Quem falhou tira um penalty", "O mais velho bebe 🍺🍺"]),
-    new VotingCard('Quem é o mais novo?', 15, ["A maioria dita a lei: o mais votado bebe 🍺🍺", "Quem não votou no mais novo bebe 🍺"]),
-    new VotingCard('Quem foi o ultimo a usar a casa de banho?', 15, ["Bebem todos os que erraram 🍺", "O culpado distribui 3 🍺🍺🍺"]),
-    new VotingCard('Quem está mais bêbado?', 15, ["O mais votado bebe 🍺🍺", "O mais votado escolhe a sua próxima vítima para beber 🍺"]),
+function loadCards() {
+    const categories = [
+        { file: 'drink_cards.json', class: DrinkCard },
+        { file: 'voting_cards.json', class: VotingCard },
+        { file: 'event_cards.json', class: EventCard },
+        { file: 'dare_cards.json', class: DareCard }
+    ];
 
-    // Event Cards
-    new EventCard('Jogo do sério!', 'Quem se rir bebe', 10, false),
-    new EventCard('O chão é lava!', 'O ultimo a tirar os pés do chão bebe', 5, false),
-    new EventCard('CARREGA NO BOTÃO!', '', 5, 'press'),
-    new EventCard('não toques no botão...', '', 5, 'dont_press'),
+    cardDatabase = [];
+    categories.forEach(cat => {
+        const filePath = path.join(__dirname, 'cards', cat.file);
+        if (fs.existsSync(filePath)) {
+            try {
+                const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                data.forEach(item => {
+                    cardDatabase.push(new cat.class(item));
+                });
+            } catch (err) {
+                console.error(`Error loading ${cat.file}:`, err);
+            }
+        }
+    });
+    console.log(`Loaded ${cardDatabase.length} cards from database.`);
+}
 
-    // Dare Cards
-    new DareCard('{player} tem de cantar o Let it Go do Frozen ou bebe {drinks}', 3),
-    new DareCard('{player} tem de deixar os outros lerem a sua última mensagem recebida ou bebe {drinks}', 2)
-];
-
-const config = require('./config.json');
+// Initial load
+loadCards();
 
 function getRandomCard() {
     const probs = config.cardProbabilities;
     const r = Math.random();
     let cumulative = 0;
 
-    // Default to the first valid feature turned on
     const validFeatures = Object.keys(probs).filter(t => config.features && config.features[t]);
     let selectedType = validFeatures.length > 0 ? validFeatures[0] : "Drink Card";
 
-    // Normalize probabilities among active features
     let totalProb = validFeatures.reduce((sum, t) => sum + probs[t], 0);
     if (totalProb === 0) totalProb = 1;
 
@@ -100,4 +107,4 @@ function getRandomCard() {
     return card;
 }
 
-module.exports = { DrinkCard, VotingCard, EventCard, DareCard, getRandomCard };
+module.exports = { DrinkCard, VotingCard, EventCard, DareCard, getRandomCard, loadCards };
