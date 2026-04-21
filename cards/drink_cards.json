@@ -1,428 +1,775 @@
 [
-
     {
-        "text": "Quem já vomitou dentro de um carro, bebam",
-        "drinks": 1
+        "text": "Quem já vomitou em cima de outra pessoa, bebem, seus amigos de merda",
+        "drinks": 3,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já vomitou em roupa, bebam",
-        "drinks": 1
+        "text": "Quem já foi apanhado pelos pais com alguém, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha",
+            "família"
+        ]
     },
     {
-        "text": "Quem já foi apanhado pelos pais no ato, bebam",
-        "drinks": 1
-    },
-    {
-        "text": "Quem já apanhou os pais no ato, bebam",
-        "drinks": 1
-    },
-
-
-
-
-
-
-    
-    {
-        "text": "Quem já mandou mensagem à ex a chorar com uma bezana, bebam",
-        "drinks": 2
+        "text": "Quem já apanhou os pais a \"brincar ao wrestling\", bebam para esquecer",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "vergonha",
+            "família"
+        ]
     },
     {
         "text": "Quem já vomitou no Uber e tentou esconder a prova do crime, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "beber",
+            "vergonha",
+            "viagens"
+        ]
     },
     {
-        "text": "Quem já adormeceu a pinar, bebam",
-        "drinks": 3
+        "text": "Quem já bazou do sexo sem ficar para dormir, bebam!",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já enviou um nude para a pessoa errada e quis morrer, bebam",
-        "drinks": 4
+        "text": "Quem já enviou uma foto péssima para a pessoa errada, bebe",
+        "drinks": 4,
+        "tags": [
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já acordou ao lado de alguém cujo nome não sabia, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "relações",
+            "beber"
+        ]
     },
     {
         "text": "Quem já curtiu com alguém feio só para não ir para casa sozinho, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já comeu um kebab de origem duvidosa às 5 da manhã, bebam",
-        "drinks": 1
+        "text": "Esquerdinos, mandem um direitino beber com a mão esqurda",
+        "drinks": 5,
+        "tags": [
+            "beber"
+        ]
     },
     {
-        "text": "Quem já foi apanhado no flagra a bater uma, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já fingiu estar sóbrio à frente dos pais e falhou miseravelmente, bebam",
-        "drinks": 2
+        "text": "Quem já fingiu estar sóbrio à frente dos pais e falhou miseravelmente, bebam e contem a história, ou bebem o dobro",
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha",
+            "família"
+        ]
     },
     {
         "text": "Quem já tentou fazer ghosting mas cruzou-se com a pessoa no Pingo Doce, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já stalkeou tanto que deu like sem querer numa foto de 2014, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já fez o walk of shame de manhã no Metro, bebam",
-        "drinks": 2
+        "text": "Loiros e loiras, bebam",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "vergonha",
+            "viagens"
+        ]
     },
     {
-        "text": "Quem já usou a desculpa 'estava podre de bêbado' para justificar ser um traste, bebam",
-        "drinks": 1
+        "text": "Arranjem um voluntário para beber 1 penalti, ou bebem todos 3 golos",
+        "drinks": 3,
+        "tags": [
+            "beber",
+            "drama"
+        ]
     },
     {
         "text": "Quem já chorou na casa de banho da discoteca por causa de um gajo/gaja merda, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "beber",
+            "drama"
+        ]
     },
     {
         "text": "Quem já levou com ghosting logo depois de pinar, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "relações",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já fodeu num carro pequeno e ficou com cãibras nas pernas, bebam",
-        "drinks": 2
+        "text": "Quem já fodeu num carro, bebe",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha",
+            "viagens"
+        ]
     },
     {
         "text": "Quem já achou que a pessoa do Tinder era bué gira mas ao vivo era um susto, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já pagou uma bebida a alguém e levou tampa dois minutos depois, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já perdeu o casaco na noite e nunca mais o viu na vida, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber"
+        ]
     },
     {
         "text": "Quem já teve de ser levado em ombros pelos amigos porque as pernas falharam, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já roubou um copo de vidro de um bar para a coleção, bebam",
-        "drinks": 1
+        "text": "Quem já roubou algo de um bar, bebam e contem o que roubaram",
+        "drinks": 3,
+        "tags": [
+            "beber"
+        ]
     },
     {
         "text": "Quem já curtiu com o/a melhor amigo/a e depois fingiu que foi um delírio coletivo, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já tentou fazer ciúmes numa festa e ninguém reparou, bebam",
-        "drinks": 2
+        "text": "Listem poemas de Fernando Pessoa. Quem não souber ou disser um repetido, bebe 3",
+        "drinks": 2,
+        "tags": [
+            "escola"
+        ]
     },
     {
         "text": "Quem já enviou o print da conversa para a própria pessoa do print, bebam",
-        "drinks": 4
+        "drinks": 4,
+        "tags": [
+            "drama",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já teve uma infeção urinária por não ir fazer xixi depois de pinar, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já mentiu a reduzir o próprio body count, bebam",
-        "drinks": 1
-    },
-    {
-        "text": "Quem já deu um chupão a alguém que tinha uma reunião de trabalho no dia seguinte, bebam",
-        "drinks": 2
+        "text": "Quem já teve que esconder um chupão, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha",
+            "trabalho"
+        ]
     },
     {
         "text": "Quem já foi pesquisar o signo do date na casa de banho, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações"
+        ]
     },
     {
         "text": "Quem já disse 'amo-te' a pinar por puro instinto e arrependeu-se na hora, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "relações",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já levou um engate para a casa dos pais a andar em bicos de pés, bebam",
-        "drinks": 2
+        "text": "Quem já levou alguem para casa dos pais. às escondidas, bebam",
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "vergonha",
+            "família"
+        ]
     },
     {
-        "text": "Quem já pimbou enquanto os colegas de casa estavam a ver TV na sala, bebam",
-        "drinks": 2
+        "text": "Quem já pimbou com colegas de casa em casa, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já veio rápido demais e culpou o excesso de 'sensibilidade', bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já acordou com a cama mijada (por si próprio) de tão bebedo que estava, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já foi parar a soro no hospital depois de uma noite de copos, bebam",
-        "drinks": 4
+        "drinks": 4,
+        "tags": [
+            "beber",
+            "drama"
+        ]
     },
     {
         "text": "Quem já teve de mandar a humilhante mensagem 'desculpa lá as figuras de ontem', bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já assinou o OnlyFans de alguém conhecido, bebam",
-        "drinks": 3
+        "text": "Quem já assinou o OnlyFans, expliquem porquê e bebam",
+        "drinks": 5,
+        "tags": [
+            "sexo"
+        ]
     },
     {
-        "text": "Quem já usou o funeral de alguém ou o hospital como spot de engate, bebam",
-        "drinks": 4
+        "text": "Quem já beijou alguem em contexto religioso, bebam",
+        "drinks": 4,
+        "tags": [
+            "relações",
+            "drama",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já instalou o Tinder só pela validação de ego e não falou com ninguém, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já passou o rodo a duas pessoas do mesmo grupo de amigos, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "drama"
+        ]
+    },
+        {
+        "text": "Quem já viu os genitais de alguem nesta sala, bebam",
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "drama"
+        ]
+    },
+        {
+        "text": "Quem já passou o rodo a duas pessoas do mesmo grupo de amigos, bebam",
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "drama"
+        ]
     },
     {
         "text": "Quem já apagou no sofá de um amigo e estragou o mood da festa, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já fodeu num provador da Zara ou da H&M, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já teve tesão de mijo mas decidiu dormir em vez de resolver, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": []
     },
     {
         "text": "Quem já vomitou no Bairro Alto e voltou a pedir uma imperial logo a seguir, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já caiu das escadas de uma discoteca a tentar ter estilo, bebam",
-        "drinks": 2
+        "text": "Quem já caiu ao chão numa discoteca, bebam",
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já se armou em galo com o segurança do bar e encolheu-se, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já acordou ao lado de alguém que não tocava nem com um pau se estivesse sóbrio, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já enviou um áudio a chorar para o ex às tantas da manhã, bebam",
-        "drinks": 3
+        "text": "Quem já comeu um brolho e se arrependeu no dia seguinte, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já teve de ir à farmácia de óculos escuros comprar a pílula do dia seguinte, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já fez promessas a Deus num atraso do período e depois esqueceu-se, bebam",
-        "drinks": 2
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já mandou 'estou quase a chegar' quando ainda estava de toalha de banho, bebam",
-        "drinks": 1
+        "text": "Quem ler isto bebe (e perderam o jogo)",
+        "drinks": 3,
+        "tags": [
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já roubou rolos de papel higiénico das casas de banho do Cais do Sodré, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já entupiu a sanita da casa de um date, bebam",
-        "drinks": 4
+        "drinks": 4,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já deu ghost porque, pura e simplesmente, teve preguiça de teclar, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações"
+        ]
     },
     {
-        "text": "Quem já curtiu com o irmão ou irmã de um ex-namorado/a, bebam",
-        "drinks": 3
+        "text": "Quem já curtiu com o irmão ou irmã de um amigo, bebam",
+        "drinks": 3,
+        "tags": [
+            "relações",
+            "drama",
+            "família"
+        ]
     },
     {
         "text": "Quem já teve os vizinhos a bater na parede (ou a polícia) por causa de barulho a foder, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "drama",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já tentou cuspir para lubrificar e acertou nas próprias costas ou na cara do outro, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já tentou ir pelo caminho de trás e arrependeu-se em 5 segundos, bebam",
-        "drinks": 2
+        "text": "Quem já roubou de uma loja, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já gravou uma sex tape e vive com a paranoia diária de ser leakada, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "drama"
+        ]
     },
     {
         "text": "Quem já tirou uma foto comprometedora para o BeReal em vez de mandar para o grupo, bebam",
-        "drinks": 4
+        "drinks": 4,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já jurou a pés juntos que fez squirt mas no fundo sabe que só se mijou toda, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já fodeu num sofá de cabedal a suar e ficou a colar que nem um leitão, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já fingiu saber bué de posições mas só sabia a do missionário, bebam",
-        "drinks": 1
+        "text": "Quem sentiu o corpo nu a colar num sofá, bebam!",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já chamou um Uber para o date de propósito para o despachar depressa, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "viagens",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já fugiu de fininho de manhã enquanto a outra pessoa dormia o sono dos justos, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já teve de meter o preservativo num pau já meio murcho porque hesitou a abrir a embalagem, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já engatou sem lavar os dentes no dia seguinte, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já vomitou no próprio cabelo a abraçar a sanita, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já adormeceu em cima da mesa do McDonald's a comer um Big Mac, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já chorou com a perfeição de uma pizza de ressaca, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já mandou mensagem à crush no Instagram, arrependeu-se e apagou antes que visse, bebam",
-        "drinks": 1
+        "text": "O último a ter mijado na rua, bebe",
+        "drinks": 3,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já deu de caras com um primo/a no Tinder, bebam",
-        "drinks": 2
+        "text": "Quem já encontrou um familiar no Tinder, bebam",
+        "drinks": 2,
+        "tags": [
+            "relações",
+            "vergonha",
+            "família"
+        ]
     },
     {
         "text": "Quem já foi tentar ver os ex dos atuais namorados no LinkedIn com conta premium, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "relações",
+            "trabalho",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já teve a playlist a tocar shuffle no ato e começou a dar música pimba do nada, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já chupou pés só porque a outra pessoa tinha um fetiche e não quis dizer não, bebam",
-        "drinks": 3
+        "text": "Quem já beijou um pé, bebam",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já partiu um copo na pista do Urban e bazou disfarçadamente, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já apanhou uma DST e teve de ir ao centro de saúde, bebam",
-        "drinks": 4
+        "drinks": 4,
+        "tags": [
+            "sexo",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já mentiu a dizer que estava bué perto de vir só para a pessoa despachar o trabalho, bebam",
-        "drinks": 2
+        "text": "Quem é a favor de meias durante o sexo, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já veio e ficou imediatamente com uma repulsa pela pessoa ao lado (síndrome de clareza pós-punheta), bebam",
-        "drinks": 2
+        "text": "Bebe se fazias a Rita Matias",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "relações",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já bateu com a cabeça na cabeceira da cama até ficar tonto e fingiu que não doeu, bebam",
-        "drinks": 1
-    },
-    {
-        "text": "Quem já ficou com cãibras no maxilar a fazer um bico e fingiu que estava só a mudar de posição, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já fez striptease na brincadeira e acabou de forma super constrangedora, bebam",
-        "drinks": 2
+        "text": "Todos que têm a letra A no primeiro nome, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já pimbou de meias de lã calçadas no inverno, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "sexo"
+        ]
     },
     {
         "text": "Quem já amaldiçoou os deuses quando o vibrador ficou sem bateria a meio, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "sexo",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já teve uma resposta super seca (tipo 'ah') a um nude planeado ao milímetro, bebam",
-        "drinks": 3
+        "text": "Quem já planeou uma nude ao milímetro, para não receber uma de votla, bebam",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "drama",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já usou a toalha das mãos do date para limpar a jarda do sexo, bebam",
-        "drinks": 2
+        "text": "Quem já usou uma toalha das mãos para limpar o pós do sexo, bebam",
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já bateu com o carro numa placa ou lancil de tão bêbado que estava, bebam",
-        "drinks": 5
+        "text": "Quem já conduziu bebedo, bebam (e os outros tirem-lhe as chaves)",
+        "drinks": 3,
+        "tags": [
+            "beber"
+        ]
     },
     {
-        "text": "Quem já perdeu o Cartão de Cidadão ou MB numa noite de festa e jurou que o tinham roubado, bebam",
-        "drinks": 1
+        "text": "Bebam 1 se acham que o João Baião esteve somehow envolvido no 11 de Setembro",
+        "drinks": 3,
+        "tags": []
     },
     {
-        "text": "Quem já bebeu um shot de tequila merdosa e ficou com o limão entalado, bebam",
-        "drinks": 1
+        "text": "O ultimo a ter chegado à festa, bebes 5, atrasado",
+        "drinks": 5,
+        "tags": [
+            "sexo",
+            "relações",
+            "drama",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já fez um body shot e achou super anti-higiénico mas foi na onda, bebam",
-        "drinks": 2
-    },
-    {
-        "text": "Quem já foi roubar a comida ao Tupperware do colega de casa no desespero da ressaca, bebam",
-        "drinks": 2
+        "text": "Quem já foi roubar a comida a um colega de casa, bebam",
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já enrolou com alguém que fuma tabaco de enrolar e sabe a cinzeiro molhado, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "relações",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já arranjou beef com os gajos do kebab porque cortaram a fila, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "drama"
+        ]
     },
     {
         "text": "Quem já gritou 'eu nem estou muito bêbado/a' enquanto não conseguia abrir um olho, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já andou ao beijo a três ou mais pessoas na mesma noite (o clássico rally-rascas), bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "beber",
+            "relações"
+        ]
     },
     {
         "text": "Quem já foi bloqueado no WhatsApp menos de 24h depois da queca, bebam",
-        "drinks": 3
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "relações",
+            "drama"
+        ]
     },
     {
-        "text": "Quem já escondeu a almofada toda manchada de base para a pessoa não ver, bebam",
-        "drinks": 2
+        "text": "3 golos em honra ao Isaltino Morais",
+        "drinks": 3,
+        "tags": [
+            "sexo",
+            "relações",
+            "vergonha"
+        ]
     },
     {
-        "text": "Quem já apagou os posts todos das redes sociais numa crise existencial durante a madrugada, bebam",
-        "drinks": 2
+        "text": "Se já manipulaste um drinking game para melhorar as tuas hipoteses, bebe 3",
+        "drinks": 3,
+        "tags": [
+            "drama",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já achou que ia partir a cama a uma pessoa gorda e conteve-se, bebam",
-        "drinks": 2
+        "drinks": 2,
+        "tags": [
+            "sexo",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já acordou com a cama cheia de migalhas ou batatas do Mac e continuou a dormir lá no meio, bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "vergonha"
+        ]
     },
     {
         "text": "Quem já jurou abraçado à sanita a mítica frase 'nunca mais toco em álcool na vida', bebam",
-        "drinks": 1
+        "drinks": 1,
+        "tags": [
+            "beber",
+            "drama",
+            "vergonha"
+        ]
     }
-
-
 ]
