@@ -5,7 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>The Chalk Room - Drinking Game</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍻</text></svg>">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/lobby.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/events.css">
+  <link rel="stylesheet" href="css/minigames.css">
+  <link rel="stylesheet" href="css/ui.css">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
@@ -18,7 +23,7 @@
 
       <div class="input-group">
         <label>O teu Nome:</label>
-        <input type="text" id="player-name" placeholder="Quem vai jogar?" maxlength="24">
+        <input type="text" id="player-name" placeholder="Quem vai jogar?" maxlength="8">
       </div>
 
       <div class="button-group">
@@ -54,7 +59,7 @@
       </div>
 
       <div class="players-container">
-        <h3>Jogadores (<span id="player-count">0</span>/8)</h3>
+        <h3>Jogadores (<span id="player-count">0</span>/5)</h3>
         <ul id="players-list" class="players-list"></ul>
       </div>
 
@@ -137,6 +142,6 @@
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script src="/client.js"></script>
+  <script type="module" src="/js/main.js"></script>
 </body>
 </html>

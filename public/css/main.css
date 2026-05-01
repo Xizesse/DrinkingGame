@@ -1,0 +1,134 @@
+:root {
+  --bg-color: #1c1c1c;
+  --chalk-white: #e9e9e9;
+  --chalk-dim: #a0a0a0;
+  --border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--chalk-white);
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  font-family: 'Fredoka', sans-serif;
+  background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.chalk-container {
+  width: 100%;
+  max-width: 500px;
+  padding: 30px;
+  border: 4px solid var(--chalk-white);
+  border-radius: var(--border-radius);
+  background: var(--bg-color);
+  box-shadow: 4px 4px 10px rgba(255,255,255,0.05);
+}
+
+/* ── Screens ─────────────────────────────────────── */
+#app {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen { display: none; }
+.screen-active { display: flex; flex-direction: column; }
+
+/* ── Generic UI Elements ─────────────────────────── */
+.btn-chalk {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  color: var(--chalk-white);
+  border: 3px solid var(--chalk-white);
+  border-radius: var(--border-radius);
+  font-family: 'Fredoka', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-chalk:hover {
+  background: var(--chalk-white);
+  color: var(--bg-color);
+  transform: rotate(-1deg) scale(1.02);
+}
+
+.btn-chalk:active { transform: scale(0.95); }
+
+.divider {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.5rem;
+  color: var(--chalk-dim);
+}
+
+.error-msg {
+  color: #ff6b6b;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-top: 15px;
+  min-height: 30px;
+}
+
+.subtext {
+  font-size: clamp(13px, 3.5vw, 16px);
+  color: var(--chalk-dim);
+  text-align: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 2px 0 6px;
+}
+
+/* ── Player icon circles ─────────────────────────── */
+.p-icon-circle {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  border: 2px solid var(--chalk-white);
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.4);
+  vertical-align: middle;
+  background-color: var(--chalk-dim);
+  color: white;
+  flex-shrink: 0;
+}
+.p-icon-circle.lg { width: 120px; height: 120px; font-size: 5.5rem; border-width: 4px; }
+.p-icon-circle.sm { width: 36px; height: 36px; font-size: 1.6rem; border-width: 1px; }
+
+/* ── Animations ──────────────────────────────────── */
+@keyframes shake {
+  0%   { transform: translate(1px,1px) rotate(0deg); }
+  20%  { transform: translate(-3px,0px) rotate(1deg); }
+  40%  { transform: translate(1px,-1px) rotate(1deg); }
+  60%  { transform: translate(-3px,1px) rotate(0deg); }
+  80%  { transform: translate(-1px,-1px) rotate(1deg); }
+  100% { transform: translate(1px,-2px) rotate(-1deg); }
+}
+
+.shake-anim {
+  animation: shake 0.5s;
+  border-color: #ff2e93 !important;
+}
+
+.event-card-active {
+  box-shadow: inset 0 0 50px rgba(255,0,0,0.5), 6px 6px 14px rgba(0,0,0,0.5) !important;
+  border-color: #ff4747 !important;
+}

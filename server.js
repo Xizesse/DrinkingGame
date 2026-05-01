@@ -112,6 +112,11 @@ function drawNextCard(code, io) {
   resolveCardTags(nextCard, room.players);
   room.currentCard = nextCard;
 
+  if (nextCard.type === 'Event Card') {
+    const handler = getEvent(nextCard.interactive);
+    handler.setup(room, nextCard, io, code);
+  }
+
   io.to(code).emit('newCard', nextCard);
 
   if (nextCard.type === 'Voting Card') {
@@ -119,13 +124,15 @@ function drawNextCard(code, io) {
     room.timeLeft = nextCard.time;
     startTimer(code, io, finishVoting);
   } else if (nextCard.type === 'Event Card') {
-    const handler = getEvent(nextCard.interactive);
-    handler.setup(room, nextCard, io, code);
     room.timeLeft = nextCard.time;
     startTimer(code, io, finishEvent);
   } else if (nextCard.type === 'Mini Game Card') {
     const handler = getMinigame(nextCard.minigameType);
-    handler.setup(room, nextCard, io, code);
+    setTimeout(() => {
+      if(rooms[code] && rooms[code].currentCard === nextCard) {
+        handler.setup(room, nextCard, io, code);
+      }
+    }, 100);
     room.minigameFinished = false;
     room.timeLeft = nextCard.time;
     startTimer(code, io, finishMinigame);
@@ -204,6 +211,36 @@ function getAvailableColor(room) {
   return chalkColors[Math.floor(Math.random() * chalkColors.length)]; // Fallback
 }
 
+const MAX_PLAYERS = 5;
+
+function addFakePlayers(room) {
+  try {
+    const liveConfig = require('./config.json');
+    let numFakes = liveConfig.fakePlayers || 0;
+    const currentCount = room.players.length;
+    
+    if (currentCount + numFakes > MAX_PLAYERS) {
+      numFakes = MAX_PLAYERS - currentCount;
+    }
+    
+    if (numFakes <= 0) return;
+
+    const iconList = ['🍺','🍷','🥃','🍸','🍹','🧉','🍶','🍾','🧊','🍻','🥂','🫧'];
+    for (let i = 0; i < numFakes; i++) {
+      room.players.push({
+        id: 'fake_' + Math.random(),
+        name: 'Bot_' + (i + 1),
+        icon: iconList[Math.floor(Math.random() * iconList.length)],
+        color: getAvailableColor(room),
+        isHost: false,
+        token: 'fake_token_' + Math.random(),
+        disconnected: false,
+        spells: []
+      });
+    }
+  } catch (e) {}
+}
+
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
@@ -216,15 +253,18 @@ io.on('connection', (socket) => {
   socket.on('reconnectAttempt', ({ token }) => {
     let foundCode = null;
     let foundPlayer = null;
-    for (const code in rooms) {
-      for (const p of rooms[code].players) {
-        if (p.token === token) {
-          foundCode = code;
-          foundPlayer = p;
-          break;
+    
+    if (token) {
+      for (const code in rooms) {
+        for (const p of rooms[code].players) {
+          if (p.token === token) {
+            foundCode = code;
+            foundPlayer = p;
+            break;
+          }
         }
+        if (foundPlayer) break;
       }
-      if (foundPlayer) break;
     }
 
     if (foundPlayer) {
@@ -250,6 +290,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('createRoom', ({ playerName, icon, color, token }) => {
+    playerName = String(playerName || '').substring(0, 8);
     let code = generateRoomCode();
     // Ensure uniqueness
     while (rooms[code]) {
@@ -264,16 +305,23 @@ io.on('connection', (socket) => {
       status: 'lobby'
     };
 
+    addFakePlayers(rooms[code]);
+
     socketMap[socket.id] = { code, token };
     socket.join(code);
     socket.emit('roomCreated', rooms[code]);
   });
 
   socket.on('joinRoom', ({ code, playerName, icon, color, token }) => {
+    playerName = String(playerName || '').substring(0, 8);
     code = code.toUpperCase();
     if (rooms[code]) {
       if (rooms[code].status === 'playing') {
         socket.emit('error', { message: 'Este jogo já começou!' });
+        return;
+      }
+      if (rooms[code].players.length >= MAX_PLAYERS) {
+        socket.emit('error', { message: 'Esta sala já está cheia (máx. 5 jogadores)!' });
         return;
       }
       const assignedColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
@@ -288,8 +336,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('joinTestRoom', ({ playerName, icon, color, token }) => {
-    let code = "TEST";
+  socket.on('quickJoin', ({ playerName, icon, color, token }) => {
+    playerName = String(playerName || '').substring(0, 8);
+    let code = "QUICK";
+    
+    // Prevent duplicate joins
+    if (socketMap[socket.id]) return;
+
     if (!rooms[code]) {
       const initialColor = color || chalkColors[Math.floor(Math.random() * chalkColors.length)];
       rooms[code] = {
@@ -297,6 +350,9 @@ io.on('connection', (socket) => {
         players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false, spells: [] }],
         status: 'lobby'
       };
+      
+      addFakePlayers(rooms[code]);
+      
       socketMap[socket.id] = { code, token };
       socket.join(code);
       socket.emit('roomCreated', rooms[code]);
@@ -305,6 +361,15 @@ io.on('connection', (socket) => {
         socket.emit('error', { message: 'Este jogo já começou!' });
         return;
       }
+      
+      // Prevent joining if token is already in the room
+      if (rooms[code].players.some(p => p.token === token)) return;
+
+      if (rooms[code].players.length >= MAX_PLAYERS) {
+        socket.emit('error', { message: 'Esta sala já está cheia (máx. 5 jogadores)!' });
+        return;
+      }
+
       const initialColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
       rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: false, token, disconnected: false, spells: [] });
       socketMap[socket.id] = { code, token };

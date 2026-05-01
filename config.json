@@ -1,20 +1,22 @@
 {
-    "testMode": true,
+    "skipRoom": true,
+    "fakePlayers": 2,
+    
     "features": {
         "Drink Card": true,
-        "Voting Card": false,
-        "Dare Card": false,
-        "Event Card": false,
+        "Voting Card": true,
+        "Dare Card": true,
+        "Event Card": true,
         "Mini Game Card": true,
         "spinWheel": true,
         "spells": true
     },
     "cardProbabilities": {
-        "Drink Card": 0.20,
-        "Voting Card": 0.20,
-        "Dare Card": 0.20,
-        "Event Card": 0.20,
-        "Mini Game Card": 0.20
+        "Drink Card": 0.01,
+        "Voting Card": 0.01,
+        "Dare Card": 0.01,
+        "Event Card": 0.50,
+        "Mini Game Card": 0.47
     },
     "wheelProbability": 0.30,
     "spellProbability": 0.30

@@ -1,0 +1,81 @@
+/* Event card */
+.btn-big-red {
+  background: #ff4747;
+  color: #fff;
+  width: 100%;
+  flex: 1;
+  min-height: 72px;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 900;
+  border-radius: 16px;
+  border: 4px solid darkred;
+  box-shadow: 0 8px 0 darkred;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: transform 0.1s;
+}
+
+.btn-big-red:active {
+  transform: translateY(8px);
+  box-shadow: 0 0 0 darkred;
+}
+
+.btn-big-red.pressed {
+  background: darkred;
+  transform: translateY(8px);
+  box-shadow: 0 0 0 darkred;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* Color button grid */
+.color-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+  flex: 1;
+}
+
+.btn-color-pick {
+  border: 4px solid rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  min-height: 72px;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-color-pick:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+}
+
+.btn-color-pick.color-btn-selected {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0.3);
+  outline: 4px solid #fff;
+}
+
+.btn-color-pick.color-btn-dim {
+  opacity: 0.35;
+}
+
+.btn-color-pick:disabled {
+  pointer-events: none;
+}
+
+/* ── Spin wheel ──────────────────────────────────── */
+.wheel-wrap {
+  position: relative;
+  width: 200px; height: 200px;
+  margin: 16px auto;
+  align-self: center;
+  flex-shrink: 0;
+}

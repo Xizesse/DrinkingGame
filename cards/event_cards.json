@@ -28,14 +28,14 @@
         "interactive": "dont_press"
     },
     {
-        "text": "PLACEHOLDER",
+        "text": "Qual é a cor?!",
         "subtext": "Carrega no botão certo ou bebes!",
         "time": 6,
         "drinks": 1,
         "interactive": "color_buttons"
     },
     {
-        "text": "PLACEHOLDER",
+        "text": "Stroop Test",
         "subtext": "O texto manda, não a cor!",
         "time": 8,
         "drinks": 2,
