@@ -3,31 +3,49 @@
   --chalk-white: #e9e9e9;
   --chalk-dim: #a0a0a0;
   --border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  
+  /* Responsive Tokens */
+  --container-width: min(500px, 100vw);
+  --page-padding: clamp(16px, 5vw, 30px);
+  --title-font: clamp(2rem, 8vw, 3.5rem);
+  --body-font: clamp(1rem, 4vw, 1.4rem);
+  --btn-font: clamp(1.4rem, 5vw, 2rem);
 }
 
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background-color: var(--bg-color);
   color: var(--chalk-white);
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   justify-content: center;
-  align-items: stretch;
+  align-items: flex-start;
   font-family: 'Fredoka', sans-serif;
   background-image: radial-gradient(#2a2a2a 1px, transparent 1px);
   background-size: 18px 18px;
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
 }
 
 .chalk-container {
   width: 100%;
-  max-width: 500px;
-  padding: 30px;
+  max-width: var(--container-width);
+  padding: var(--page-padding);
   border: 4px solid var(--chalk-white);
   border-radius: var(--border-radius);
   background: var(--bg-color);
@@ -37,13 +55,20 @@ body {
 /* ── Screens ─────────────────────────────────────── */
 #app {
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .screen { display: none; }
-.screen-active { display: flex; flex-direction: column; }
+.screen-active { 
+  display: flex; 
+  flex-direction: column; 
+  height: 100%;
+}
 
 /* ── Generic UI Elements ─────────────────────────── */
 .btn-chalk {
@@ -54,7 +79,7 @@ body {
   border: 3px solid var(--chalk-white);
   border-radius: var(--border-radius);
   font-family: 'Fredoka', sans-serif;
-  font-size: 2rem;
+  font-size: var(--btn-font);
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -93,6 +118,39 @@ body {
   justify-content: center;
   gap: 4px;
   margin: 2px 0 6px;
+}
+
+.chalk-title {
+  font-size: var(--title-font);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(255,255,255,0.3);
+  margin-bottom: 5px;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--chalk-dim);
+  font-size: 1.4rem;
+  margin-bottom: 30px;
+  text-decoration: underline dashed;
+}
+
+/* ── Landscape & Small Screen Tweaks ──────────────── */
+@media (max-height: 500px) {
+  #app { padding: 0; }
+  .chalk-container { padding: 15px; }
+  .chalk-title { font-size: 1.6rem; margin-bottom: 2px; }
+  .chalk-title br { display: none; }
+  .chalk-title::after { content: ' '; }
+  .subtitle { margin-bottom: 10px; font-size: 1rem; }
+  .input-group { margin-bottom: 8px; }
+  .input-group label { font-size: 1.1rem; }
+  input { font-size: 1.3rem; padding: 5px 10px; }
+  .button-group { margin-top: 10px; }
+  .divider { margin: 10px 0; font-size: 1.1rem; }
+  .btn-chalk { padding: 8px; }
 }
 
 /* ── Player icon circles ─────────────────────────── */

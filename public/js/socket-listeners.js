@@ -3,7 +3,7 @@ import { showError, showScreen } from './utils.js';
 import { enterLobby, updatePlayersList, renderTopBarPlayers } from './lobby.js';
 import { renderMySpellBar, openSpellGrantedModal } from './spells.js';
 import { cardTypeMap, cardRenderers } from './cards.js';
-import { updateImpostorWordBox, updateBettingUI } from './minigames.js';
+import { updateImpostorWordBox, updateBettingUI, renderBettingResults } from './minigames.js';
 
 export function initSocketListeners() {
   const screenHome  = document.getElementById('home-screen');
@@ -34,6 +34,10 @@ export function initSocketListeners() {
 
   socket.on('roomCreated', room => enterLobby(room));
   socket.on('roomJoined',  room => enterLobby(room));
+  socket.on('gameEnded', room => {
+    alert('Fim do Jogo! A voltar ao Lobby...');
+    enterLobby(room);
+  });
   socket.on('playerJoined', players => updatePlayersList(players));
   socket.on('playerLeft',   players => updatePlayersList(players));
   socket.on('error', err => showError(err.message));
@@ -44,12 +48,23 @@ export function initSocketListeners() {
     renderMySpellBar();
   });
 
-  socket.on('newCard', card => {
+  socket.on('newCard', ({ card, currentRound, maxRounds }) => {
     state.globalCurrentCard = card;
+    const curEl = document.getElementById('round-current');
+    const maxEl = document.getElementById('round-max');
+    if (curEl) curEl.textContent = currentRound;
+    if (maxEl) maxEl.textContent = maxRounds;
+    
+    // Clear minigame data only if it's not a fresh arrival for this card
+    const now = Date.now();
+    const dataIsFresh = state.minigameDataReceivedAt && (now - state.minigameDataReceivedAt < 1000);
+    
     state.myMinigameData  = null;
     state.minigameState   = {};
     state.myWordRevealed  = false;
     state.myBetPlaced     = false;
+    state.currentTugBet   = 0;
+
     if(dareActions) dareActions.style.display     = 'none';
     if(waitingHostText) waitingHostText.style.display = 'none';
 
@@ -67,6 +82,7 @@ export function initSocketListeners() {
 
   socket.on('minigamePlayerData', data => {
     state.myMinigameData = data;
+    state.minigameDataReceivedAt = Date.now();
     if (state.globalCurrentCard && state.globalCurrentCard.minigameType === 'impostor') {
       updateImpostorWordBox();
     }
@@ -74,8 +90,9 @@ export function initSocketListeners() {
 
   socket.on('minigameStateUpdate', ms_state => {
     state.minigameState = { ...state.minigameState, ...ms_state };
+    state.minigameDataReceivedAt = Date.now();
     if (!state.globalCurrentCard) return;
-    if (state.globalCurrentCard.minigameType === 'betting') updateBettingUI();
+    if (state.globalCurrentCard.minigameType === 'rps') updateBettingUI();
   });
 
   socket.on('timerUpdate', t => {
@@ -88,6 +105,18 @@ export function initSocketListeners() {
     if(waitingHostText) waitingHostText.style.display = 'none';
 
     let consequence = data.consequence || '';
+    
+    // Check for specialized minigame results
+    if (consequence.startsWith('[BET_RESULTS]:')) {
+      const jsonStr = consequence.replace('[BET_RESULTS]:', '');
+      try {
+        const results = JSON.parse(jsonStr);
+        consequence = renderBettingResults(results);
+      } catch (e) {
+        console.error('Error parsing bet results:', e);
+      }
+    }
+
     if (consequence.includes('{drinks}') && state.globalCurrentCard?.drinks) {
       consequence = consequence.replace('{drinks}', `<strong>${state.globalCurrentCard.drinks}</strong>`);
     }

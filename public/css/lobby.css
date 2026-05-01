@@ -6,23 +6,6 @@
   overflow-y: auto;
 }
 
-.chalk-title {
-  font-size: clamp(2rem, 9vw, 3.5rem);
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(255,255,255,0.3);
-  margin-bottom: 5px;
-}
-
-.subtitle {
-  text-align: center;
-  color: var(--chalk-dim);
-  font-size: 1.4rem;
-  margin-bottom: 30px;
-  text-decoration: underline dashed;
-}
-
 .input-group {
   margin-bottom: 20px;
 }
@@ -97,14 +80,21 @@ input::placeholder { color: #666; }
   transform: scale(1.1);
 }
 
-.current-icon { font-size: 4rem; min-width: 100px; text-align: center; }
+.current-icon { 
+  font-size: clamp(3rem, 15vw, 5rem); 
+  min-width: clamp(80px, 20vw, 120px); 
+  text-align: center; 
+}
 
 .color-swatches {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+  gap: clamp(8px, 2vw, 15px);
   margin-top: 15px;
   justify-items: center;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .swatch {
@@ -156,3 +146,25 @@ input::placeholder { color: #666; }
 
 .lobby-footer { margin-top: 30px; text-align: center; }
 #waiting-msg { font-size: 1.8rem; color: var(--chalk-dim); font-style: italic; }
+
+/* ── Landscape & Small Screen Tweaks ──────────────── */
+@media (max-height: 500px) {
+  #home-screen, #lobby-screen { padding: 10px 20px; }
+  
+  .customization-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  .customization-box > .input-group { flex: 1; min-width: 180px; margin-bottom: 0; }
+  .current-icon { font-size: 2.2rem; min-width: 50px; }
+  .btn-arrow { font-size: 1.6rem; padding: 2px 8px; }
+  .color-swatches { grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 5px; }
+  .swatch { width: 26px; height: 26px; }
+  
+  .players-container h3 { font-size: 1.3rem; margin-bottom: 4px; }
+  .players-list li { font-size: 1.3rem; padding: 3px 0; }
+  .lobby-footer { margin-top: 15px; }
+}

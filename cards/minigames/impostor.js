@@ -2,12 +2,18 @@ const { fisherYates } = require('../utils');
 
 const impostor = {
   setup(room, card, io, code) {
-    // For now, hardcode the pair to Normal / IMPOSTOR
-    const [realWord, impostorWord] = ['Normal', 'IMPOSTOR'];
-
     const activePlayers = room.players.filter(p => !p.disconnected);
+    if (activePlayers.length < 2) return; // Need at least 2 to have an impostor
+
+    // Pick a random pair from config
+    const pairs = card.config?.wordPairs || [['Normal', 'Anormal']];
+    const pair = pairs[Math.floor(Math.random() * pairs.length)];
+    const realWord = pair[Math.floor(Math.random() * pair.length)];
+    const impostorWord = "Tu és o Impostor";
+
     const shuffled = fisherYates([...activePlayers]);
     const impostorPlayer = shuffled[0];
+    const startingPlayer = shuffled[shuffled.length - 1]; // Someone else starts
 
     room.minigame = {
       type: 'impostor',
@@ -16,6 +22,10 @@ const impostor = {
       impostorWord,
     };
 
+    // Update card text with the starting player
+    const startName = `<span style="color: ${startingPlayer.color || '#fff'}"><strong>${startingPlayer.name}</strong></span>`;
+    card.text = `Diz uma palavra relacionada com a palavra secreta. O teu objetivo é encontrar o impostor. Começa o ${startName}`;
+
     activePlayers.forEach(p => {
       const word = p.id === impostorPlayer.id ? impostorWord : realWord;
       if (p.id && io) io.to(p.id).emit('minigamePlayerData', { word });
@@ -23,7 +33,6 @@ const impostor = {
   },
 
   onAction(room, socket, { action } = {}, io, code) {
-    // Word reveal is now purely local/client-side, no server state needed
     return { done: false };
   },
 
@@ -37,7 +46,7 @@ const impostor = {
       : 'O impostor';
 
     return {
-      consequence: `${name} era o impostor! A palavra deles era "<strong>${impostorWord}</strong>" enquanto os outros tinham "<strong>${realWord}</strong>". Bebe 🍺(${card.drinks})!`,
+      consequence: `${name} era o impostor! A palavra secreta era "<strong>${realWord}</strong>". Bebe 🍺(${card.drinks})!`,
     };
   },
 };

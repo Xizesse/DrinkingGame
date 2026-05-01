@@ -22,8 +22,11 @@ export const state = {
   isLocalHost: false,
   mySpells: [],
   selectedSpellIndex: -1,
+  currentBetAmount: 1,
+  currentTugBet: 0,
 
   myMinigameData: null,
+  minigameDataReceivedAt: 0,
   minigameState: {},
   myWordRevealed: false,
   myBetPlaced: false,

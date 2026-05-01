@@ -96,6 +96,8 @@ function drawNextCard(code, io) {
   if (room.timerInterval) clearInterval(room.timerInterval);
   room.eventFinished = false;
   room.votingFinished = false;
+  room.minigameFinished = false;
+  room.minigame = null;
 
   const activePlayers = room.players.filter(p => !p.disconnected);
   const playerPool = activePlayers.length > 0 ? activePlayers : room.players;
@@ -111,13 +113,29 @@ function drawNextCard(code, io) {
 
   resolveCardTags(nextCard, room.players);
   room.currentCard = nextCard;
+  
+  room.currentRound++;
+  if (room.currentRound > room.maxRounds) {
+    room.status = 'lobby';
+    io.to(code).emit('gameEnded', room);
+    return;
+  }
+
+  io.to(code).emit('newCard', { 
+    card: nextCard, 
+    currentRound: room.currentRound, 
+    maxRounds: room.maxRounds 
+  });
+
+  if (nextCard.type === 'Mini Game Card') {
+    const handler = getMinigame(nextCard.minigameType);
+    handler.setup(room, nextCard, io, code);
+  }
 
   if (nextCard.type === 'Event Card') {
     const handler = getEvent(nextCard.interactive);
     handler.setup(room, nextCard, io, code);
   }
-
-  io.to(code).emit('newCard', nextCard);
 
   if (nextCard.type === 'Voting Card') {
     room.votes = {};
@@ -127,15 +145,8 @@ function drawNextCard(code, io) {
     room.timeLeft = nextCard.time;
     startTimer(code, io, finishEvent);
   } else if (nextCard.type === 'Mini Game Card') {
-    const handler = getMinigame(nextCard.minigameType);
-    setTimeout(() => {
-      if(rooms[code] && rooms[code].currentCard === nextCard) {
-        handler.setup(room, nextCard, io, code);
-      }
-    }, 100);
-    room.minigameFinished = false;
-    room.timeLeft = nextCard.time;
-    startTimer(code, io, finishMinigame);
+    // No timer for minigames anymore
+    room.timeLeft = 0;
   }
 }
 
@@ -383,6 +394,8 @@ io.on('connection', (socket) => {
     code = code.toUpperCase();
     if (rooms[code] && rooms[code].players.length >= 2) {
       rooms[code].status = 'playing';
+      rooms[code].currentRound = 0;
+      rooms[code].maxRounds = 30;
       io.to(code).emit('gameStarted');
       drawNextCard(code, io);
     } else if (rooms[code] && rooms[code].players.length < 2) {

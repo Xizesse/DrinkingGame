@@ -1,9 +1,9 @@
 const impostor = require('./impostor');
-const betting  = require('./betting');
+const rps      = require('./rps');
 
 const registry = {
   impostor,
-  betting,
+  rps,
 };
 
 const unknown = {

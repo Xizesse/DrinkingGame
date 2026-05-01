@@ -16,5 +16,14 @@
         ["Cinema", "Teatro"]
       ]
     }
+  },
+  {
+    "text": "Pedra Papel Tesoura",
+    "minigameType": "rps",
+    "drinks": 2,
+    "time": 0,
+    "config": {
+      "maxBet": 5
+    }
   }
 ]

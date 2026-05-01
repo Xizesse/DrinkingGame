@@ -78,11 +78,19 @@
 .modal-content {
   background: var(--bg-color);
   text-align: center;
-  padding: 30px;
+  padding: clamp(20px, 5vw, 40px);
   border-radius: 20px;
-  width: 100%;
-  max-width: 400px;
+  border: 4px solid var(--chalk-white);
+  width: min(450px, 95%);
 }
 
-.modal-content h2 { font-size: 2.5rem; margin-bottom: 5px; }
-.modal-content p  { font-size: 1.6rem; margin-bottom: 25px; color: var(--chalk-dim); }
+.modal-content h2 { font-size: clamp(1.8rem, 6vw, 2.5rem); margin-bottom: 5px; }
+.modal-content p  { font-size: clamp(1.2rem, 4vw, 1.6rem); margin-bottom: 20px; color: var(--chalk-dim); }
+
+@media (max-height: 500px) {
+  .modal-content { padding: 15px; }
+  .modal-content h2 { font-size: 1.6rem; }
+  .modal-content p { margin-bottom: 10px; font-size: 1.1rem; }
+  .modal-content #spell-modal-icon,
+  .modal-content #spell-granted-icon { font-size: 3rem !important; margin: 5px 0 !important; }
+}
