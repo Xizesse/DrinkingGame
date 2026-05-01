@@ -38,13 +38,25 @@ const spells = [
   { id: 'double', icon: '✖️2️⃣', name: 'Double', description: 'Duplica os goles que mandas alguem beber' }
 ];
 
+function fisherYates(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 // Helper to resolve {playerN} and {drinks} tags on the server for consistency
 function resolveCardTags(card, players) {
   if (!card.text) return;
 
+  const activePlayers = players.filter(p => !p.disconnected);
+  const pool = activePlayers.length > 0 ? activePlayers : players;
+
   const playerTags = card.text.match(/\{player[0-9]*\}/g) || [];
   const uniqueTags = [...new Set(playerTags)];
-  const shuffled = [...players].sort(() => 0.5 - Math.random());
+  const shuffled = fisherYates(pool);
 
   uniqueTags.forEach((tag, idx) => {
     const p = shuffled[idx % shuffled.length];
@@ -76,7 +88,18 @@ function drawNextCard(code, io) {
 
   if (room.timerInterval) clearInterval(room.timerInterval);
 
-  const nextCard = getRandomCard();
+  const activePlayers = room.players.filter(p => !p.disconnected);
+  const playerPool = activePlayers.length > 0 ? activePlayers : room.players;
+
+  let nextCard;
+  let uniqueTagCount = 0;
+  let attempts = 0;
+  do {
+    nextCard = getRandomCard();
+    uniqueTagCount = new Set((nextCard.text || '').match(/\{player[0-9]*\}/g) || []).size;
+    attempts++;
+  } while (uniqueTagCount > playerPool.length && attempts < 10);
+
   resolveCardTags(nextCard, room.players);
   room.currentCard = nextCard;
 
@@ -93,7 +116,45 @@ function drawNextCard(code, io) {
       }
     }, 1000);
   } else if (nextCard.type === 'Event Card') {
-    room.presses = []; // track button press timestamps
+    room.presses = [];
+    room.colorPresses = {};
+    room.correctColorKey = null;
+
+    if (nextCard.interactive === 'color_buttons' || nextCard.interactive === 'color_buttons_stroop') {
+      const colorDefs = [
+        { key: 'red',    hex: '#ff4747', label: 'VERMELHO' },
+        { key: 'green',  hex: '#3cb44b', label: 'VERDE'    },
+        { key: 'yellow', hex: '#ffe119', label: 'AMARELO'  },
+        { key: 'blue',   hex: '#4363d8', label: 'AZUL'     },
+      ];
+      const shuffled = fisherYates(colorDefs);
+      const correct = shuffled[Math.floor(Math.random() * shuffled.length)];
+      room.correctColorKey = correct.key;
+
+      if (nextCard.interactive === 'color_buttons') {
+        nextCard.text = `Carrega no botão <strong style="color:${correct.hex}">${correct.label}</strong>`;
+        nextCard.colorButtons = shuffled.map(c => ({ key: c.key, hex: c.hex }));
+      } else {
+        const wrongColor = colorDefs.filter(c => c.key !== correct.key);
+        const titleColor = wrongColor[Math.floor(Math.random() * wrongColor.length)].hex;
+        nextCard.text = `Carrega no botão <strong style="color:${titleColor}">${correct.label}</strong>`;
+
+        // Derange labels so no button shows its own color word
+        const labels = shuffled.map(c => c.label);
+        let deranged;
+        do { deranged = fisherYates(labels); }
+        while (deranged.some((lbl, i) => lbl === shuffled[i].label));
+
+        nextCard.colorButtons = shuffled.map((c, i) => {
+          const wordLabel = deranged[i];
+          const wordActual = colorDefs.find(d => d.label === wordLabel);
+          const availColors = colorDefs.filter(d => d.key !== wordActual.key && d.key !== c.key);
+          const wordColor = availColors[Math.floor(Math.random() * availColors.length)].hex;
+          return { key: c.key, hex: c.hex, word: wordLabel, wordColor };
+        });
+      }
+    }
+
     room.timeLeft = nextCard.time;
     io.to(code).emit('timerUpdate', room.timeLeft);
     room.timerInterval = setInterval(() => {
@@ -104,14 +165,6 @@ function drawNextCard(code, io) {
         finishEvent(code, io);
       }
     }, 1000);
-  } else if (nextCard.type === 'Dare Card' && room.players.length > 0) {
-    const activePlayers = room.players.filter(pl => !pl.disconnected);
-    const pool = activePlayers.length > 0 ? activePlayers : room.players;
-    const p = pool[Math.floor(Math.random() * pool.length)];
-    nextCard.targetPlayer = p;
-    const beerEmojis = '🍺'.repeat(nextCard.drinks);
-    const coloredName = `<span style="color: ${p.color || '#ffffff'}">${p.name}</span>`;
-    nextCard.text = nextCard.text.replace('{player}', coloredName).replace('{drinks}', beerEmojis);
   }
 
   io.to(code).emit('newCard', nextCard);
@@ -172,12 +225,32 @@ function finishEvent(code, io) {
       if (r > 0.5) {
         const slowest = room.presses[room.presses.length - 1];
         const slowestPlayer = room.players.find(p => p.id === slowest.id);
-        consequenceText = `Mais lento <span style="color: ${slowestPlayer.color}">${slowestPlayer.name}</span>: Estás muito bêbedo, bebe 🍺(${card.drinks})`;
+        consequenceText = slowestPlayer
+          ? `Mais lento <span style="color: ${slowestPlayer.color}">${slowestPlayer.name}</span>: Estás muito bêbedo, bebe 🍺(${card.drinks})`
+          : `O mais lento foi rápido a sair! Bebe quem estava mais devagar 🍺(${card.drinks})`;
       } else {
         const fastest = room.presses[0];
         const fastestPlayer = room.players.find(p => p.id === fastest.id);
-        consequenceText = `Mais rápido <span style="color: ${fastestPlayer.color}">${fastestPlayer.name}</span>: Estás muito sóbrio, bebe 🍺(${card.drinks + 2})`;
+        consequenceText = fastestPlayer
+          ? `Mais rápido <span style="color: ${fastestPlayer.color}">${fastestPlayer.name}</span>: Estás muito sóbrio, bebe 🍺(${card.drinks + 2})`
+          : `O mais rápido saiu do jogo! Bebe quem estava mais à frente 🍺(${card.drinks + 2})`;
       }
+    }
+  } else if (card.interactive === 'color_buttons' || card.interactive === 'color_buttons_stroop') {
+    const correct = room.correctColorKey;
+    const wrongPressers = [];
+    const didntPress = [];
+    activePlayers.forEach(p => {
+      const pressed = room.colorPresses ? room.colorPresses[p.id] : undefined;
+      if (pressed === undefined) didntPress.push(p);
+      else if (pressed !== correct) wrongPressers.push(p);
+    });
+    const drinkers = [...wrongPressers, ...didntPress];
+    if (drinkers.length === 0) {
+      consequenceText = `Toda a gente acertou! Ninguém bebe! 🎉`;
+    } else {
+      const names = drinkers.map(p => `<span style="color:${p.color}">${p.name}</span>`).join(', ');
+      consequenceText = `${names} ${drinkers.length === 1 ? 'errou' : 'erraram'} o botão! ${drinkers.length === 1 ? 'Bebe' : 'Bebam'} 🍺(${card.drinks})`;
     }
   } else if (card.interactive === 'dont_press') {
     if (room.presses.length > 0) {
@@ -241,11 +314,16 @@ io.on('connection', (socket) => {
       foundPlayer.disconnected = false;
       socket.join(foundCode);
 
-      socket.emit('reconnected', { room: rooms[foundCode], player: foundPlayer });
-      io.to(foundCode).emit('playerStatusUpdate', rooms[foundCode].players);
+      const room = rooms[foundCode];
+      socket.emit('reconnected', { room, player: foundPlayer });
+      io.to(foundCode).emit('playerStatusUpdate', room.players);
 
-      if (foundPlayer.isHost && rooms[foundCode].status === 'playing') {
-        io.to(foundCode).emit('hostReconnected');
+      if (room.status === 'playing') {
+        if (foundPlayer.isHost) io.to(foundCode).emit('hostReconnected');
+        if (room.currentCard) {
+          socket.emit('newCard', room.currentCard);
+          if (room.timeLeft > 0) socket.emit('timerUpdate', room.timeLeft);
+        }
       }
     } else {
       socket.emit('reconnectFailed');
@@ -259,11 +337,11 @@ io.on('connection', (socket) => {
       code = generateRoomCode();
     }
 
-    const initialColor = color && !rooms[code].players.some(p => p.color === color) ? color : chalkColors[Math.floor(Math.random() * chalkColors.length)];
+    const initialColor = color || chalkColors[Math.floor(Math.random() * chalkColors.length)];
 
     rooms[code] = {
       id: code,
-      players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false }],
+      players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false, spells: [] }],
       status: 'lobby'
     };
 
@@ -280,7 +358,7 @@ io.on('connection', (socket) => {
         return;
       }
       const assignedColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
-      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: assignedColor, isHost: false, token, disconnected: false });
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: assignedColor, isHost: false, token, disconnected: false, spells: [] });
       socketMap[socket.id] = { code, token };
 
       socket.join(code);
@@ -297,15 +375,19 @@ io.on('connection', (socket) => {
       const initialColor = color || chalkColors[Math.floor(Math.random() * chalkColors.length)];
       rooms[code] = {
         id: code,
-        players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false }],
+        players: [{ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: true, token, disconnected: false, spells: [] }],
         status: 'lobby'
       };
       socketMap[socket.id] = { code, token };
       socket.join(code);
       socket.emit('roomCreated', rooms[code]);
     } else {
+      if (rooms[code].status === 'playing') {
+        socket.emit('error', { message: 'Este jogo já começou!' });
+        return;
+      }
       const initialColor = (color && !rooms[code].players.some(p => p.color === color)) ? color : getAvailableColor(rooms[code]);
-      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: false, token, disconnected: false });
+      rooms[code].players.push({ id: socket.id, name: playerName, icon: icon, color: initialColor, isHost: false, token, disconnected: false, spells: [] });
       socketMap[socket.id] = { code, token };
       socket.join(code);
       socket.emit('roomJoined', rooms[code]);
@@ -350,10 +432,27 @@ io.on('connection', (socket) => {
       if (!room.votes) room.votes = {};
       room.votes[socket.id] = targetId;
 
-      if (Object.keys(room.votes).length >= room.players.length) {
+      const connectedCount = room.players.filter(p => !p.disconnected).length;
+      if (Object.keys(room.votes).length >= connectedCount) {
         clearInterval(room.timerInterval);
         finishVoting(code, io);
       }
+    }
+  });
+
+  socket.on('colorButtonPress', ({ code, colorKey }) => {
+    code = code.toUpperCase();
+    const room = rooms[code];
+    if (!room || !room.currentCard) return;
+    const interactive = room.currentCard.interactive;
+    if (interactive !== 'color_buttons' && interactive !== 'color_buttons_stroop') return;
+    if (!room.colorPresses) room.colorPresses = {};
+    if (room.colorPresses[socket.id] !== undefined) return;
+    room.colorPresses[socket.id] = colorKey;
+    const connectedCount = room.players.filter(p => !p.disconnected).length;
+    if (Object.keys(room.colorPresses).length >= connectedCount) {
+      clearInterval(room.timerInterval);
+      finishEvent(code, io);
     }
   });
 
@@ -365,7 +464,8 @@ io.on('connection', (socket) => {
       if (!room.presses.find(p => p.id === socket.id)) {
         room.presses.push({ id: socket.id, time: Date.now() });
         room.presses.sort((a, b) => a.time - b.time);
-        if (room.currentCard.interactive === 'press' && room.presses.length >= room.players.length) {
+        const connectedCount = room.players.filter(p => !p.disconnected).length;
+        if (room.currentCard.interactive === 'press' && room.presses.length >= connectedCount) {
           clearInterval(room.timerInterval);
           finishEvent(code, io);
         }
@@ -373,49 +473,50 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('dareResult', ({ code, result, targetId }) => {
+  socket.on('dareResult', ({ code, result }) => {
     code = code.toUpperCase();
     const room = rooms[code];
-    if (room && room.currentCard && room.currentCard.type === 'Voting Card') {
-      const p = room.players.find(pl => pl.id === targetId);
-      if (p) {
-        io.to(code).emit('cardResults', { stats: [], consequence: `${p.name} usou Reverse! Anulando Votação 🔄` });
-      }
-    } else if (room && room.currentCard && room.currentCard.type === 'Dare Card') {
-      const p = room.currentCard.targetPlayer;
+    if (!room || !room.currentCard || room.currentCard.type !== 'Dare Card') return;
 
-      if (result === 'did_it') {
-        // Skip emitting cardResults for 'did_it' as requested - go straight to next card (via host)
-        // We still grant spells
+    const p = room.currentCard.targetPlayer;
+    if (!p) return;
 
-        try {
-          const liveConfig = require('./config.json');
-          if (liveConfig.features && liveConfig.features.spells) {
-            const spellProbability = liveConfig.spellProbability !== undefined ? liveConfig.spellProbability : 0.3;
-            if (Math.random() < spellProbability) {
-              const randomSpell = spells[Math.floor(Math.random() * spells.length)];
-              io.to(p.id).emit('spellGranted', randomSpell);
-            }
+    if (result === 'did_it') {
+      try {
+        const liveConfig = require('./config.json');
+        if (liveConfig.features && liveConfig.features.spells) {
+          const spellProbability = liveConfig.spellProbability !== undefined ? liveConfig.spellProbability : 0.3;
+          if (Math.random() < spellProbability) {
+            const randomSpell = spells[Math.floor(Math.random() * spells.length)];
+            if (!p.spells) p.spells = [];
+            p.spells.push(randomSpell);
+            if (p.id) io.to(p.id).emit('spellGranted', randomSpell);
           }
-        } catch (e) { }
-      }
+        }
+      } catch (e) { }
+      drawNextCard(code, io);
+    }
 
-      if (result === 'drank') {
-        try {
-          const liveConfig = require('./config.json');
-          if (liveConfig.features && liveConfig.features.spinWheel) {
-            const wheelProbability = liveConfig.wheelProbability !== undefined ? liveConfig.wheelProbability : 0.5;
-            if (Math.random() < wheelProbability) {
-              room.wheelPlayer = p;
-              room.wheelDrinks = room.currentCard.drinks;
-              io.to(code).emit('showWheel', { targetPlayer: p });
-              return;
-            }
+    if (result === 'drank') {
+      try {
+        const liveConfig = require('./config.json');
+        if (liveConfig.features && liveConfig.features.spinWheel) {
+          const wheelProbability = liveConfig.wheelProbability !== undefined ? liveConfig.wheelProbability : 0.5;
+          if (Math.random() < wheelProbability) {
+            room.wheelPlayer = p;
+            room.wheelDrinks = room.currentCard.drinks;
+            io.to(code).emit('showWheel', { targetPlayer: p });
+            return;
           }
-        } catch (e) { }
+        }
+      } catch (e) { }
 
-        // Skip cardResults for 'drank' unless wheel kicks in
-      }
+      const drinks = room.currentCard.drinks;
+      const beerEmojis = '🍺'.repeat(Math.min(drinks, 5)) + (drinks > 5 ? '...' : '');
+      io.to(code).emit('cardResults', {
+        stats: [],
+        consequence: `<span style="color:${p.color || '#fff'}">${p.name}</span> bebeu ${beerEmojis} (${drinks})!`
+      });
     }
   });
 
@@ -444,6 +545,7 @@ io.on('connection', (socket) => {
       const p = room.players.find(x => x.id === socket.id);
       const spell = spells.find(s => s.id === spellId);
       if (p && spell) {
+        if (p.spells) p.spells = p.spells.filter(s => s.id !== spellId);
         const msg = `✨ ${p.name} usou o feitiço ${spell.name} ${spell.icon}! \n${spell.description}`;
         io.to(code).emit('spellUsed', { player: p, spell, message: msg });
       }
@@ -452,22 +554,32 @@ io.on('connection', (socket) => {
 
   // Handle disconnect
   socket.on('disconnect', () => {
-    for (const code in rooms) {
-      const room = rooms[code];
-      const playerIndex = room.players.findIndex(p => p.id === socket.id);
-      if (playerIndex !== -1) {
-        room.players.splice(playerIndex, 1);
-        if (room.players.length === 0) {
-          delete rooms[code]; // Destroy empty room
-        } else {
-          // If host left, reassign host
-          if (!room.players.find(p => p.isHost)) {
-            room.players[0].isHost = true;
-          }
-          io.to(code).emit('playerLeft', room.players);
-        }
-        break;
+    const mapping = socketMap[socket.id];
+    delete socketMap[socket.id];
+    if (!mapping) return;
+
+    const { code } = mapping;
+    const room = rooms[code];
+    if (!room) return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    if (room.status === 'lobby') {
+      // In lobby: remove the player entirely (no point holding a slot)
+      room.players.splice(room.players.indexOf(player), 1);
+      if (room.players.length === 0) {
+        delete rooms[code];
+      } else {
+        if (!room.players.find(p => p.isHost)) room.players[0].isHost = true;
+        io.to(code).emit('playerLeft', room.players);
       }
+    } else {
+      // Mid-game: preserve the player slot so they can reconnect
+      player.disconnected = true;
+      player.id = null;
+      io.to(code).emit('playerStatusUpdate', room.players);
+      if (player.isHost) io.to(code).emit('hostDisconnected');
     }
   });
 });

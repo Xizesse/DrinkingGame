@@ -1,21 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>The Chalk Room - Drinking Game</title>
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍻</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍻</text></svg>">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
-  <div class="chalk-container" id="app">
+  <div id="app">
 
     <!-- Home Screen -->
-    <div id="home-screen" class="screen screen-active">
+    <div id="home-screen" class="screen">
       <h1 class="chalk-title">The Chalk Room<br>Drinking Game</h1>
       <p class="subtitle">Traça o limite quando estiveres bêbedo</p>
 
@@ -26,9 +23,7 @@
 
       <div class="button-group">
         <button id="btn-create" class="btn btn-chalk">Criar Sala</button>
-        <div class="divider">
-          <span>~ OU ~</span>
-        </div>
+        <div class="divider"><span>~ OU ~</span></div>
         <div class="join-group">
           <input type="text" id="room-code-input" placeholder="CÓDIGO" maxlength="4">
           <button id="btn-join" class="btn btn-chalk">Entrar</button>
@@ -43,7 +38,6 @@
         <h2>Código da Sala: <span id="lobby-code">----</span></h2>
       </div>
 
-      <!-- Customization Box -->
       <div class="customization-box">
         <div class="input-group icon-selection">
           <label>O teu Ícone:</label>
@@ -55,71 +49,88 @@
         </div>
         <div class="input-group color-selection">
           <label>A tua Cor:</label>
-          <div id="color-swatches" class="color-swatches">
-            <!-- Colors injected by JS -->
-          </div>
+          <div id="color-swatches" class="color-swatches"></div>
         </div>
       </div>
 
       <div class="players-container">
         <h3>Jogadores (<span id="player-count">0</span>/8)</h3>
-        <ul id="players-list" class="players-list">
-          <!-- Players injected here by JS -->
-        </ul>
+        <ul id="players-list" class="players-list"></ul>
       </div>
 
       <div class="lobby-footer">
-        <button id="btn-start" class="btn btn-chalk btn-start" style="display: none;">Começar Jogo!</button>
+        <button id="btn-start" class="btn btn-chalk btn-start" style="display:none">Começar Jogo!</button>
         <p id="waiting-msg">À espera do anfitrião...</p>
       </div>
     </div>
 
     <!-- Game Screen -->
     <div id="game-screen" class="screen">
+
+      <!-- Top players bar -->
       <div id="top-players-bar" class="top-players-bar"></div>
 
-      <div id="card-display" class="card-display">
+      <!-- Card zone: card + controls, vertically centred -->
+      <div class="card-zone" id="card-zone">
+
+        <!-- The card -->
         <div class="chalk-card" id="current-card">
-          <div class="card-type">Drink Card</div>
+          <div class="card-type" id="card-type-label">Drink Card</div>
           <div class="card-text" id="card-text">Pede ao host para tirar uma carta!</div>
           <div class="card-action" id="card-action"></div>
         </div>
-      </div>
 
-      <div class="game-footer">
-        <button id="btn-next-card" class="btn btn-chalk" style="display: none;">Próxima Carta</button>
-      </div>
-    </div>
-  </div>
+        <!-- Dare buttons — outside the card, host only -->
+        <div id="dare-actions" class="dare-actions" style="display:none">
+          <button class="btn-dare success" onclick="dareResult('did_it')">Cumpriu</button>
+          <button class="btn-dare fail"    onclick="dareResult('drank')">Bebeu</button>
+        </div>
+
+        <!-- Non-host waiting message for dare cards -->
+        <div id="waiting-host-text" class="waiting-host-text" style="display:none">
+          À espera da decisão do anfitrião...
+        </div>
+
+        <!-- Next card button -->
+        <button id="btn-next-card" class="btn btn-chalk" style="display:none">Próxima Carta</button>
+
+      </div><!-- /card-zone -->
+
+      <!-- My spell bar: avatar + 3 slots -->
+      <div id="my-spell-bar" class="my-spell-bar" style="display:none"></div>
+
+    </div><!-- /game-screen -->
+  </div><!-- /app -->
 
   <div id="toast-container"></div>
-  <div id="spells-bar" class="spells-bar"></div>
 
+  <!-- Spell modal (use spell) -->
   <div id="spell-modal" class="modal">
-    <div class="modal-content chalk-container" style="max-width: 400px;">
+    <div class="modal-content chalk-container" style="max-width:400px">
       <h2 id="spell-modal-title">Spell Name</h2>
-      <div id="spell-modal-icon" style="font-size: 5rem; margin: 15px 0;">🛡️</div>
+      <div id="spell-modal-icon" style="font-size:5rem;margin:15px 0">🛡️</div>
       <p id="spell-modal-desc">Description</p>
-      <div style="display:flex; justify-content:center; gap: 15px;">
-        <button id="btn-use-spell" class="btn btn-chalk" style="margin-right: 15px;">USAR</button>
+      <div style="display:flex;justify-content:center;gap:15px">
+        <button id="btn-use-spell" class="btn btn-chalk" style="margin-right:15px">USAR</button>
         <button class="btn btn-chalk" onclick="closeSpellModal()">FECHAR</button>
       </div>
     </div>
   </div>
 
+  <!-- Spell granted modal -->
   <div id="spell-granted-modal" class="modal">
-    <div class="modal-content chalk-container" style="max-width: 400px; border-color: #a29bfe;">
-      <h2 style="color: #a29bfe;">✨ Novo Feitiço!</h2>
-      <div id="spell-granted-icon" style="font-size: 5rem; margin: 15px 0;">🛡️</div>
-      <h3 id="spell-granted-title" style="font-size: 2rem; margin-bottom: 10px;">Spell Name</h3>
-      <p id="spell-granted-desc" style="font-size: 1.6rem; margin-bottom: 25px; color: var(--chalk-dim);">Description
-      </p>
+    <div class="modal-content chalk-container" style="max-width:400px;border-color:#a29bfe">
+      <h2 style="color:#a29bfe">✨ Novo Feitiço!</h2>
+      <div id="spell-granted-icon" style="font-size:5rem;margin:15px 0">🛡️</div>
+      <h3 id="spell-granted-title" style="font-size:2rem;margin-bottom:10px">Spell Name</h3>
+      <p id="spell-granted-desc" style="font-size:1.6rem;margin-bottom:25px;color:var(--chalk-dim)">Description</p>
       <button class="btn btn-chalk" onclick="closeSpellGrantedModal()">OKAY</button>
     </div>
   </div>
 
+  <!-- Host disconnected overlay -->
   <div id="host-disconnected-overlay" class="modal">
-    <div class="modal-content" style="border-color: #ff6b6b; color: #ff6b6b;">
+    <div class="modal-content" style="border-color:#ff6b6b;color:#ff6b6b">
       <h2>⚠️ Pausa</h2>
       <p>O Anfitrião perdeu a ligação... À espera que ele reentre na sessão para o jogo retomar!</p>
     </div>
@@ -128,5 +139,4 @@
   <script src="/socket.io/socket.io.js"></script>
   <script src="/client.js"></script>
 </body>
-
 </html>

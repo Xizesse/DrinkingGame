@@ -1,18 +1,18 @@
 {
     "testMode": true,
     "features": {
-        "Drink Card": true,
-        "Voting Card": true,
-        "Dare Card": true,
+        "Drink Card": false,
+        "Voting Card": false,
+        "Dare Card": false,
         "Event Card": true,
         "spinWheel": true,
         "spells": true
     },
     "cardProbabilities": {
-        "Drink Card": 0.00,
-        "Voting Card": 0.30,
-        "Dare Card": 0.30,
-        "Event Card": 0.30
+        "Drink Card": 0.25,
+        "Voting Card": 0.25,
+        "Dare Card": 0.25,
+        "Event Card": 0.25
     },
     "wheelProbability": 0.30,
     "spellProbability": 0.30
