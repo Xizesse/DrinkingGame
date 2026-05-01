@@ -18,8 +18,8 @@
 
 .mg-flip-card {
   background-color: transparent;
-  width: min(220px, 58vw);
-  height: clamp(80px, 18vh, 120px);
+  width: min(200px, 55vw);
+  height: clamp(70px, 15vh, 100px);
   perspective: 1000px;
 }
 
@@ -84,6 +84,62 @@
   background: #ffe119;
   color: var(--bg-color);
 }
+
+.mg-impostor-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.mg-impostor-title {
+  font-size: clamp(1.4rem, 5vw, 1.8rem);
+  font-weight: 900;
+  color: #ffe119;
+  text-transform: uppercase;
+}
+
+.mg-impostor-category {
+  font-size: clamp(1rem, 4vw, 1.2rem);
+}
+
+.mg-impostor-rules {
+  font-size: clamp(0.9rem, 3.5vw, 1rem);
+  opacity: 0.9;
+  line-height: 1.2;
+}
+
+.mg-impostor-start {
+  font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  margin-top: 4px;
+}
+
+/* Secret Card Back Styles */
+.mg-flip-card-back {
+  flex-direction: column;
+  padding: 10px;
+}
+
+.mg-secret-word {
+  font-size: clamp(1.8rem, 8vw, 2.6rem);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mg-impostor-stakes-outer {
+  font-size: 1.1rem;
+  font-weight: bold;
+  text-align: center;
+  margin: 5px 0;
+  line-height: 1.4;
+}
+
+.mg-impostor-stakes-outer .win { color: #4cd137; }
+.mg-impostor-stakes-outer .loss { color: #ff4757; }
 
 /* Betting */
 /* Betting 2.0 */

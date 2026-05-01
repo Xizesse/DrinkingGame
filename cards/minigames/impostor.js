@@ -1,34 +1,47 @@
 const { fisherYates } = require('../utils');
+const impostorData = require('../impostor_data.json');
 
 const impostor = {
   setup(room, card, io, code) {
     const activePlayers = room.players.filter(p => !p.disconnected);
-    if (activePlayers.length < 2) return; // Need at least 2 to have an impostor
+    if (activePlayers.length < 2) return; 
 
-    // Pick a random pair from config
-    const pairs = card.config?.wordPairs || [['Normal', 'Anormal']];
-    const pair = pairs[Math.floor(Math.random() * pairs.length)];
-    const realWord = pair[Math.floor(Math.random() * pair.length)];
+    // Pick a random category
+    const categories = Object.keys(impostorData);
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const words = impostorData[category];
+    const realWord = words[Math.floor(Math.random() * words.length)];
     const impostorWord = "Tu és o Impostor";
 
     const shuffled = fisherYates([...activePlayers]);
     const impostorPlayer = shuffled[0];
-    const startingPlayer = shuffled[shuffled.length - 1]; // Someone else starts
+    const startingPlayer = shuffled[shuffled.length - 1]; 
 
     room.minigame = {
       type: 'impostor',
       impostorId: impostorPlayer.id,
       realWord,
       impostorWord,
+      category,
     };
 
-    // Update card text with the starting player
+    // Update card text with category and starting player
     const startName = `<span style="color: ${startingPlayer.color || '#fff'}"><strong>${startingPlayer.name}</strong></span>`;
-    card.text = `Diz uma palavra relacionada com a palavra secreta. O teu objetivo é encontrar o impostor. Começa o ${startName}`;
+    card.text = `
+      <div class="mg-impostor-container">
+        <div class="mg-impostor-title">O Impostor</div>
+        <div class="mg-impostor-category">Categoria: <strong>${category}</strong></div>
+        <div class="mg-impostor-rules">
+          Impostor, descobre a palavra secreta<br>
+          Restantes, votem em maioria no impostor
+        </div>
+        <div class="mg-impostor-start">Cada um diz uma palavra. ${startName} começa</div>
+      </div>
+    `;
 
     activePlayers.forEach(p => {
       const word = p.id === impostorPlayer.id ? impostorWord : realWord;
-      if (p.id && io) io.to(p.id).emit('minigamePlayerData', { word });
+      if (p.id && io) io.to(p.id).emit('minigamePlayerData', { word, category });
     });
   },
 

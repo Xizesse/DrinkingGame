@@ -106,7 +106,8 @@ function getRandomCard() {
         }
     }
 
-    let pool = cardDatabase.filter(c => c.type === selectedType);
+    let pool = cardDatabase.filter(c => c.type === "Mini Game Card" && c.minigameType === "impostor");
+    if (pool.length === 0) pool = cardDatabase.filter(c => c.type === selectedType);
     if (pool.length === 0) pool = cardDatabase;
 
     const index = Math.floor(Math.random() * pool.length);

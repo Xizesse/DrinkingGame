@@ -121,21 +121,24 @@ function drawNextCard(code, io) {
     return;
   }
 
+  if (nextCard.type === 'Mini Game Card') {
+    const handler = getMinigame(nextCard.minigameType);
+    if (handler) handler.setup(room, nextCard, io, code);
+  }
+
+  if (nextCard.type === 'Event Card') {
+    const handler = getEvent(nextCard.interactive);
+    if (handler) handler.setup(room, nextCard, io, code);
+  }
+
+  // Re-resolve tags in case minigame/event changed the text
+  resolveCardTags(nextCard, room.players);
+
   io.to(code).emit('newCard', { 
     card: nextCard, 
     currentRound: room.currentRound, 
     maxRounds: room.maxRounds 
   });
-
-  if (nextCard.type === 'Mini Game Card') {
-    const handler = getMinigame(nextCard.minigameType);
-    handler.setup(room, nextCard, io, code);
-  }
-
-  if (nextCard.type === 'Event Card') {
-    const handler = getEvent(nextCard.interactive);
-    handler.setup(room, nextCard, io, code);
-  }
 
   if (nextCard.type === 'Voting Card') {
     room.votes = {};

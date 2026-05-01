@@ -34,13 +34,13 @@ export function renderBettingResults(data) {
 
 export function renderMiniGameCard(card) {
   state.currentTugBet = 0;
+  
   const cardAction = document.getElementById('card-action');
   let html = '';
   if (card.minigameType === 'impostor') {
-    html += `
-      <div id="mg-word-box" class="mg-word-box">
-        <div class="subtext">A preparar a tua palavra... 🃏</div>
-      </div>`;
+    html += `<div id="mg-word-box" class="mg-word-box">
+               <div class="subtext">A carregar palavra... 🃏</div>
+             </div>`;
     if (state.myMinigameData) {
       setTimeout(updateImpostorWordBox, 0);
     }
@@ -58,16 +58,22 @@ export function updateImpostorWordBox() {
   const box = document.getElementById('mg-word-box');
   if (!box || !state.myMinigameData) return;
   const word = state.myMinigameData.word;
+  const category = state.myMinigameData.category || '???';
   const flippedClass = state.myWordRevealed ? 'flipped' : '';
   const btnText = state.myWordRevealed ? 'HIDE CARD' : 'SHOW CARD';
 
   box.innerHTML = `
-    <div class="mg-explanation">Descobre quem é o Impostor e não sejas apanhado!</div>
     <div class="mg-flip-card ${flippedClass}">
       <div class="mg-flip-card-inner" onclick="toggleImpostorReveal()">
         <div class="mg-flip-card-front">?</div>
-        <div class="mg-flip-card-back">${word}</div>
+        <div class="mg-flip-card-back">
+          <div class="mg-secret-word">${word}</div>
+        </div>
       </div>
+    </div>
+    <div class="mg-impostor-stakes-outer">
+      <span class="win">Impostor ganha: Distribui 5</span><br>
+      <span class="loss">Impostor perde: Bebe 5</span>
     </div>
     <button class="mg-reveal-btn" onclick="toggleImpostorReveal()">${btnText}</button>
   `;
@@ -116,7 +122,7 @@ export function updateRpsUI() {
     `;
   } else if (phase === 'playing') {
     html = `
-      <div class="mg-challenge-header">PEDRA PAPEL TESOURA ✂️</div>
+      <div class="mg-challenge-header">Joguem! À melhor de 3 ✂️</div>
       <div class="mg-playing-stage">
         <div class="mg-competitor-col">
           ${window.renderIcon(player1.icon, player1.color, 'lg')}

@@ -57,10 +57,13 @@ export function initSocketListeners() {
     
     // Clear minigame data only if it's not a fresh arrival for this card
     const now = Date.now();
-    const dataIsFresh = state.minigameDataReceivedAt && (now - state.minigameDataReceivedAt < 1000);
+    const dataIsFresh = state.minigameDataReceivedAt && (now - state.minigameDataReceivedAt < 2000);
     
-    state.myMinigameData  = null;
-    state.minigameState   = {};
+    if (!dataIsFresh) {
+      state.myMinigameData  = null;
+      state.minigameState   = {};
+    }
+    
     state.myWordRevealed  = false;
     state.myBetPlaced     = false;
     state.currentTugBet   = 0;
