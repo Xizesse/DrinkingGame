@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const config = require('./config.json');
+const config = require('../config.json');
 
 class DrinkCard {
     constructor(data = {}) {
@@ -44,19 +44,32 @@ class DareCard {
     }
 }
 
+class MiniGameCard {
+    constructor(data = {}) {
+        this.text = data.text || "";
+        this.minigameType = data.minigameType || "";
+        this.drinks = data.drinks || 1;
+        this.time = data.time || 90;
+        this.config = data.config || {};
+        this.type = "Mini Game Card";
+        this.interactive = "mini_game";
+    }
+}
+
 let cardDatabase = [];
 
 function loadCards() {
     const categories = [
-        { file: 'drink_cards.json', class: DrinkCard },
-        { file: 'voting_cards.json', class: VotingCard },
-        { file: 'event_cards.json', class: EventCard },
-        { file: 'dare_cards.json', class: DareCard }
+        { file: 'drink_cards.json',    class: DrinkCard },
+        { file: 'voting_cards.json',   class: VotingCard },
+        { file: 'event_cards.json',    class: EventCard },
+        { file: 'dare_cards.json',     class: DareCard },
+        { file: 'minigame_cards.json', class: MiniGameCard },
     ];
 
     cardDatabase = [];
     categories.forEach(cat => {
-        const filePath = path.join(__dirname, 'cards', cat.file);
+        const filePath = path.join(__dirname, cat.file);
         if (fs.existsSync(filePath)) {
             try {
                 const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -97,14 +110,12 @@ function getRandomCard() {
     if (pool.length === 0) pool = cardDatabase;
 
     const index = Math.floor(Math.random() * pool.length);
-    const originalCard = pool[index];
-    const card = { ...originalCard };
+    const card = JSON.parse(JSON.stringify(pool[index]));
 
-    if (card.type === "Voting Card" && originalCard.consequences) {
-        const rad = Math.floor(Math.random() * originalCard.consequences.length);
-        card.consequence = originalCard.consequences[rad];
+    if (card.type === "Voting Card" && card.consequences) {
+        card.consequence = card.consequences[Math.floor(Math.random() * card.consequences.length)];
     }
     return card;
 }
 
-module.exports = { DrinkCard, VotingCard, EventCard, DareCard, getRandomCard, loadCards };
+module.exports = { DrinkCard, VotingCard, EventCard, DareCard, MiniGameCard, getRandomCard, loadCards };

@@ -1,0 +1,20 @@
+[
+  {
+    "text": "O Impostor",
+    "minigameType": "impostor",
+    "drinks": 3,
+    "time": 120,
+    "config": {
+      "wordPairs": [
+        ["Praia", "Deserto"],
+        ["Cão", "Gato"],
+        ["Pizza", "Hambúrguer"],
+        ["Verão", "Inverno"],
+        ["Futebol", "Basquete"],
+        ["Mar", "Montanha"],
+        ["Café", "Chá"],
+        ["Cinema", "Teatro"]
+      ]
+    }
+  }
+]

@@ -37,6 +37,11 @@ let isLocalHost      = false;
 let mySpells         = [];
 let selectedSpellIndex = -1;
 
+let myMinigameData  = null;
+let minigameState   = {};
+let myWordRevealed  = false;
+let myBetPlaced     = false;
+
 // Persistent token for reconnection
 let myToken = localStorage.getItem('chalkDrinkingGameToken');
 if (!myToken) {
@@ -190,87 +195,237 @@ socket.on('gameStarted', () => {
 });
 
 // ── Card rendering ────────────────────────────────────────────────────────────
+const cardTypeMap = {
+  'Drink Card':      { label: 'CARTA DE BEBIDA', color: '#74b9ff' },
+  'Voting Card':     { label: 'VOTAÇÃO',          color: '#a8df65' },
+  'Event Card':      { label: 'EVENTO',           color: '#ff6b6b' },
+  'Dare Card':       { label: 'DESAFIO',          color: '#a29bfe' },
+  'Mini Game Card':  { label: 'MINIJOGO',         color: '#ffe119' },
+};
+
+const cardRenderers = {
+  'Drink Card':     renderDrinkCard,
+  'Voting Card':    renderVotingCard,
+  'Event Card':     renderEventCard,
+  'Dare Card':      renderDareCard,
+  'Mini Game Card': renderMiniGameCard,
+};
+
 socket.on('newCard', card => {
   globalCurrentCard = card;
-
-  // Reset dare UI
+  myMinigameData  = null;
+  minigameState   = {};
+  myWordRevealed  = false;
+  myBetPlaced     = false;
   dareActions.style.display     = 'none';
   waitingHostText.style.display = 'none';
 
-  // Card type label
-  const typeMap = {
-    'Drink Card':  { label: 'CARTA DE BEBIDA', color: '#74b9ff' },
-    'Voting Card': { label: 'VOTAÇÃO',          color: '#a8df65' },
-    'Event Card':  { label: 'EVENTO',           color: '#ff6b6b' },
-    'Dare Card':   { label: 'DESAFIO',          color: '#a29bfe' },
-  };
-  const typeInfo = typeMap[card.type] || { label: card.type.toUpperCase(), color: '#e9e9e9' };
+  const typeInfo = cardTypeMap[card.type] || { label: card.type.toUpperCase(), color: '#e9e9e9' };
   cardTypeLabel.textContent = typeInfo.label;
   cardTypeLabel.style.color = typeInfo.color;
-
   cardText.innerHTML = card.text;
   cardAction.innerHTML = '';
 
-  if (card.type === 'Drink Card') {
-    // Shot glasses anchored to bottom
-    cardAction.innerHTML = `
-      <div class="shot-glasses" style="margin-top:auto;border-top:2px dashed var(--chalk-white);padding-top:12px;">
-        ${shotGlassesHTML(card.drinks)}
-        <strong style="margin-left:6px;font-size:1.2rem">(${card.drinks})</strong>
-      </div>`;
+  const renderer = cardRenderers[card.type];
+  if (renderer) renderer(card);
+});
 
-  } else if (card.type === 'Voting Card') {
-    let html = `<div class="timer" id="timer-display">${card.time}</div>`;
-    html += `<div class="voting-list">`;
-    globalPlayers.forEach(p => {
-      const iconHtml = window.renderIcon(p.icon, p.color, 'sm');
-      const isMe = p.id === socket.id ? '<span style="margin-left:auto;font-size:11px;color:var(--chalk-dim)">(você)</span>' : '';
-      html += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">
-        ${iconHtml}
-        <span style="color:${p.color};font-weight:600">${p.name}</span>
-        ${isMe}
-      </button>`;
-    });
-    html += `</div>`;
-    cardAction.innerHTML = html;
+function renderDrinkCard(card) {
+  cardAction.innerHTML = `
+    <div class="shot-glasses" style="margin-top:auto;border-top:2px dashed var(--chalk-white);padding-top:12px;">
+      ${shotGlassesHTML(card.drinks)}
+      <strong style="margin-left:6px;font-size:1.2rem">(${card.drinks})</strong>
+    </div>`;
+}
 
-  } else if (card.type === 'Event Card') {
-    playBang();
-    const cardEl = document.getElementById('current-card');
-    cardEl.classList.add('event-card-active');
-    setTimeout(() => cardEl.classList.remove('event-card-active'), 2000);
+function renderVotingCard(card) {
+  let html = `<div class="timer" id="timer-display">${card.time}</div>`;
+  html += `<div class="voting-list">`;
+  globalPlayers.forEach(p => {
+    const iconHtml = window.renderIcon(p.icon, p.color, 'sm');
+    const isMe = p.id === socket.id
+      ? '<span style="margin-left:auto;font-size:11px;color:var(--chalk-dim)">(você)</span>'
+      : '';
+    html += `<button class="btn-vote" data-id="${p.id}" onclick="voteFor('${p.id}')">
+      ${iconHtml}
+      <span style="color:${p.color};font-weight:600">${p.name}</span>
+      ${isMe}
+    </button>`;
+  });
+  html += `</div>`;
+  cardAction.innerHTML = html;
+}
 
-    let html = `<div class="subtext">${card.subtext} ${shotGlassSVG(14, '#a0a0a0')}</div>`;
-    html += `<div class="timer" id="timer-display">${card.time}</div>`;
-    if (card.interactive === 'color_buttons' || card.interactive === 'color_buttons_stroop') {
-      html += `<div class="color-btn-grid">`;
-      card.colorButtons.forEach(btn => {
-        const label = btn.word
-          ? `<span style="color:${btn.wordColor};font-size:clamp(13px,3.5vw,17px);font-weight:900;letter-spacing:1px">${btn.word}</span>`
-          : '';
-        html += `<button class="btn-color-pick" style="background:${btn.hex}" id="cbtn-${btn.key}" onclick="pressColorButton('${btn.key}')">${label}</button>`;
-      });
-      html += `</div>`;
-    } else if (card.interactive) {
-      html += `<button class="btn-big-red" id="btn-event-press" onclick="pressEvent()">PRESS HERE</button>`;
-    }
-    cardAction.innerHTML = html;
+function renderEventCard(card) {
+  playBang();
+  const cardEl = document.getElementById('current-card');
+  cardEl.classList.add('event-card-active');
+  setTimeout(() => cardEl.classList.remove('event-card-active'), 2000);
 
-  } else if (card.type === 'Dare Card') {
-    // Shot glasses inside card, anchored to bottom
-    cardAction.innerHTML = `
-      <div style="flex:1"></div>
-      <div class="shot-glasses" style="margin-bottom:6px">
-        ${shotGlassesHTML(card.drinks, 26)}
-      </div>`;
+  let html = `<div class="subtext">${card.subtext} ${shotGlassSVG(14, '#a0a0a0')}</div>`;
+  html += `<div class="timer" id="timer-display">${card.time}</div>`;
 
-    // Buttons outside card
-    if (isLocalHost) {
-      dareActions.style.display = 'flex';
-    } else {
-      waitingHostText.style.display = 'block';
-    }
+  if (card.interactive === 'color_buttons' || card.interactive === 'color_buttons_stroop') {
+    html += renderColorButtonGrid(card);
+  } else if (card.interactive) {
+    html += `<button class="btn-big-red" id="btn-event-press" onclick="pressEvent()">PRESS HERE</button>`;
   }
+  cardAction.innerHTML = html;
+}
+
+function renderColorButtonGrid(card) {
+  let html = `<div class="color-btn-grid">`;
+  card.colorButtons.forEach(btn => {
+    const label = btn.word
+      ? `<span style="color:${btn.wordColor};font-size:clamp(13px,3.5vw,17px);font-weight:900;letter-spacing:1px">${btn.word}</span>`
+      : '';
+    html += `<button class="btn-color-pick" style="background:${btn.hex}" id="cbtn-${btn.key}" onclick="pressColorButton('${btn.key}')">${label}</button>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderDareCard(card) {
+  cardAction.innerHTML = `
+    <div style="flex:1"></div>
+    <div class="shot-glasses" style="margin-bottom:6px">
+      ${shotGlassesHTML(card.drinks, 26)}
+    </div>`;
+  if (isLocalHost) {
+    dareActions.style.display = 'flex';
+  } else {
+    waitingHostText.style.display = 'block';
+  }
+}
+
+function renderMiniGameCard(card) {
+  let html = `<div class="timer" id="timer-display">${card.time}</div>`;
+  if (card.minigameType === 'impostor') {
+    html += `
+      <div id="mg-word-box" class="mg-word-box">
+        <div class="subtext">A aguardar a tua palavra...</div>
+      </div>`;
+  } else if (card.minigameType === 'betting') {
+    html += `<div id="mg-betting" class="mg-betting"><div class="subtext">A preparar o desafio...</div></div>
+             <div id="mg-bets" class="mg-bets"></div>`;
+  }
+  cardAction.innerHTML = html;
+}
+
+function updateImpostorWordBox() {
+  const box = document.getElementById('mg-word-box');
+  if (!box || !myMinigameData) return;
+  const word = myMinigameData.word;
+  const flippedClass = myWordRevealed ? 'flipped' : '';
+  const btnText = myWordRevealed ? 'HIDE CARD' : 'SHOW CARD';
+
+  box.innerHTML = `
+    <div class="mg-explanation">Descobre quem é o Impostor e não sejas apanhado!</div>
+    <div class="mg-flip-card ${flippedClass}">
+      <div class="mg-flip-card-inner" onclick="toggleImpostorReveal()">
+        <div class="mg-flip-card-front">?</div>
+        <div class="mg-flip-card-back">${word}</div>
+      </div>
+    </div>
+    <button class="mg-reveal-btn" onclick="toggleImpostorReveal()">${btnText}</button>
+  `;
+}
+
+window.toggleImpostorReveal = function () {
+  if (!myMinigameData) return;
+  myWordRevealed = !myWordRevealed;
+  updateImpostorWordBox();
+};
+
+function updateBettingUI() {
+  const bettingEl = document.getElementById('mg-betting');
+  const betsEl    = document.getElementById('mg-bets');
+
+  if (bettingEl && minigameState.player1 && minigameState.player2) {
+    const { player1, player2, challenge, maxBet = 5 } = minigameState;
+    const isCompetitor = socket.id === player1.id || socket.id === player2.id;
+
+    let html = `
+      <div class="mg-competitors">
+        <div class="mg-competitor">
+          ${window.renderIcon(player1.icon, player1.color)}
+          <span style="color:${player1.color}">${player1.name}</span>
+        </div>
+        <span class="mg-vs">⚔️</span>
+        <div class="mg-competitor">
+          ${window.renderIcon(player2.icon, player2.color)}
+          <span style="color:${player2.color}">${player2.name}</span>
+        </div>
+      </div>
+      <div class="subtext">${challenge}</div>`;
+
+    if (isCompetitor) {
+      html += `<div class="subtext" style="margin-top:6px">Estás no desafio! Boa sorte! 💪</div>`;
+      if (isLocalHost) {
+        html += `<div class="mg-declare-row">
+          <button class="btn-chalk mg-winner-btn" onclick="declareWinner('${player1.id}')">🏆 ${player1.name}</button>
+          <button class="btn-chalk mg-winner-btn" onclick="declareWinner('${player2.id}')">🏆 ${player2.name}</button>
+        </div>`;
+      }
+    } else if (!myBetPlaced) {
+      html += `
+        <div class="mg-bet-form">
+          <div class="subtext">Quanto apostas? (máx ${maxBet})</div>
+          <input type="number" id="bet-amount" min="1" max="${maxBet}" value="1" class="mg-bet-input">
+          <div class="mg-bet-row">
+            <button class="btn-chalk mg-bet-btn" onclick="placeBet('${player1.id}')">Aposto em ${player1.name}</button>
+            <button class="btn-chalk mg-bet-btn" onclick="placeBet('${player2.id}')">Aposto em ${player2.name}</button>
+          </div>
+        </div>`;
+    } else {
+      html += `<div class="subtext" style="margin-top:6px">Aposta feita! A aguardar... ⏳</div>`;
+    }
+
+    bettingEl.innerHTML = html;
+  }
+
+  if (betsEl && minigameState.bets) {
+    const entries = Object.entries(minigameState.bets);
+    if (entries.length === 0) { betsEl.innerHTML = ''; return; }
+    let html = '<div class="mg-bets-list">';
+    entries.forEach(([playerId, bet]) => {
+      const p = globalPlayers.find(x => x.id === playerId);
+      const voted = globalPlayers.find(x => x.id === bet.votedFor);
+      if (!p) return;
+      html += `<div class="mg-bet-entry">
+        ${window.renderIcon(p.icon, p.color, 'sm')}
+        <span style="color:${p.color}">${p.name}</span>
+        <span class="mg-bet-label">apostou ${bet.amount} em ${voted ? voted.name : '?'}</span>
+      </div>`;
+    });
+    html += '</div>';
+    betsEl.innerHTML = html;
+  }
+}
+
+window.placeBet = function (votedFor) {
+  if (myBetPlaced) return;
+  const amount = parseInt(document.getElementById('bet-amount').value) || 1;
+  myBetPlaced = true;
+  socket.emit('minigameAction', { code: currentRoomCode, payload: { action: 'place_bet', amount, votedFor } });
+  updateBettingUI();
+};
+
+window.declareWinner = function (winnerId) {
+  socket.emit('minigameAction', { code: currentRoomCode, payload: { action: 'declare_winner', votedFor: winnerId } });
+};
+
+socket.on('minigamePlayerData', data => {
+  myMinigameData = data;
+  if (globalCurrentCard && globalCurrentCard.minigameType === 'impostor') {
+    updateImpostorWordBox();
+  }
+});
+
+socket.on('minigameStateUpdate', state => {
+  minigameState = { ...minigameState, ...state };
+  if (!globalCurrentCard) return;
+  if (globalCurrentCard.minigameType === 'betting')  updateBettingUI();
 });
 
 // ── Timer ─────────────────────────────────────────────────────────────────────
@@ -319,24 +474,23 @@ window.dareResult = function (result) {
   socket.emit('dareResult', { code: currentRoomCode, result });
 };
 
-// ── Color button press ────────────────────────────────────────────────────────
+// ── Event card actions (both route through the unified cardAction event) ──────
+window.pressEvent = function () {
+  if (navigator.vibrate) navigator.vibrate([500]);
+  socket.emit('cardAction', { code: currentRoomCode, payload: {} });
+  const btn = document.getElementById('btn-event-press');
+  if (btn) { btn.disabled = true; btn.innerHTML = 'PRESSED!'; btn.classList.add('pressed'); }
+};
+
 window.pressColorButton = function (colorKey) {
   if (navigator.vibrate) navigator.vibrate([200]);
-  socket.emit('colorButtonPress', { code: currentRoomCode, colorKey });
+  socket.emit('cardAction', { code: currentRoomCode, payload: { colorKey } });
   document.querySelectorAll('.btn-color-pick').forEach(btn => {
     btn.disabled = true;
     if (btn.id !== `cbtn-${colorKey}`) btn.classList.add('color-btn-dim');
   });
   const selected = document.getElementById(`cbtn-${colorKey}`);
   if (selected) selected.classList.add('color-btn-selected');
-};
-
-// ── Event press ───────────────────────────────────────────────────────────────
-window.pressEvent = function () {
-  if (navigator.vibrate) navigator.vibrate([500]);
-  socket.emit('eventPress', { code: currentRoomCode });
-  const btn = document.getElementById('btn-event-press');
-  if (btn) { btn.disabled = true; btn.innerHTML = 'PRESSED!'; btn.classList.add('pressed'); }
 };
 
 // ── Wheel ─────────────────────────────────────────────────────────────────────

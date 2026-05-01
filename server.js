@@ -2,7 +2,10 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { getRandomCard } = require('./cards');
+const { getRandomCard } = require('./cards/cards');
+const { fisherYates } = require('./cards/utils');
+const { getEvent } = require('./cards/events');
+const { getMinigame } = require('./cards/minigames');
 const config = require('./config.json');
 
 const app = express();
@@ -37,15 +40,6 @@ const spells = [
   { id: 'reverse', icon: '🔄', name: 'Reverse', description: 'Faz beber quem te mandou beber' },
   { id: 'double', icon: '✖️2️⃣', name: 'Double', description: 'Duplica os goles que mandas alguem beber' }
 ];
-
-function fisherYates(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 // Helper to resolve {playerN} and {drinks} tags on the server for consistency
 function resolveCardTags(card, players) {
@@ -82,11 +76,26 @@ function resolveCardTags(card, players) {
   }
 }
 
+function startTimer(code, io, onExpire) {
+  const room = rooms[code];
+  io.to(code).emit('timerUpdate', room.timeLeft);
+  room.timerInterval = setInterval(() => {
+    room.timeLeft--;
+    io.to(code).emit('timerUpdate', room.timeLeft);
+    if (room.timeLeft <= 0) {
+      clearInterval(room.timerInterval);
+      onExpire(code, io);
+    }
+  }, 1000);
+}
+
 function drawNextCard(code, io) {
   const room = rooms[code];
   if (!room) return;
 
   if (room.timerInterval) clearInterval(room.timerInterval);
+  room.eventFinished = false;
+  room.votingFinished = false;
 
   const activePlayers = room.players.filter(p => !p.disconnected);
   const playerPool = activePlayers.length > 0 ? activePlayers : room.players;
@@ -103,76 +112,30 @@ function drawNextCard(code, io) {
   resolveCardTags(nextCard, room.players);
   room.currentCard = nextCard;
 
+  io.to(code).emit('newCard', nextCard);
+
   if (nextCard.type === 'Voting Card') {
     room.votes = {};
     room.timeLeft = nextCard.time;
-    io.to(code).emit('timerUpdate', room.timeLeft);
-    room.timerInterval = setInterval(() => {
-      room.timeLeft--;
-      io.to(code).emit('timerUpdate', room.timeLeft);
-      if (room.timeLeft <= 0) {
-        clearInterval(room.timerInterval);
-        finishVoting(code, io);
-      }
-    }, 1000);
+    startTimer(code, io, finishVoting);
   } else if (nextCard.type === 'Event Card') {
-    room.presses = [];
-    room.colorPresses = {};
-    room.correctColorKey = null;
-
-    if (nextCard.interactive === 'color_buttons' || nextCard.interactive === 'color_buttons_stroop') {
-      const colorDefs = [
-        { key: 'red',    hex: '#ff4747', label: 'VERMELHO' },
-        { key: 'green',  hex: '#3cb44b', label: 'VERDE'    },
-        { key: 'yellow', hex: '#ffe119', label: 'AMARELO'  },
-        { key: 'blue',   hex: '#4363d8', label: 'AZUL'     },
-      ];
-      const shuffled = fisherYates(colorDefs);
-      const correct = shuffled[Math.floor(Math.random() * shuffled.length)];
-      room.correctColorKey = correct.key;
-
-      if (nextCard.interactive === 'color_buttons') {
-        nextCard.text = `Carrega no botão <strong style="color:${correct.hex}">${correct.label}</strong>`;
-        nextCard.colorButtons = shuffled.map(c => ({ key: c.key, hex: c.hex }));
-      } else {
-        const wrongColor = colorDefs.filter(c => c.key !== correct.key);
-        const titleColor = wrongColor[Math.floor(Math.random() * wrongColor.length)].hex;
-        nextCard.text = `Carrega no botão <strong style="color:${titleColor}">${correct.label}</strong>`;
-
-        // Derange labels so no button shows its own color word
-        const labels = shuffled.map(c => c.label);
-        let deranged;
-        do { deranged = fisherYates(labels); }
-        while (deranged.some((lbl, i) => lbl === shuffled[i].label));
-
-        nextCard.colorButtons = shuffled.map((c, i) => {
-          const wordLabel = deranged[i];
-          const wordActual = colorDefs.find(d => d.label === wordLabel);
-          const availColors = colorDefs.filter(d => d.key !== wordActual.key && d.key !== c.key);
-          const wordColor = availColors[Math.floor(Math.random() * availColors.length)].hex;
-          return { key: c.key, hex: c.hex, word: wordLabel, wordColor };
-        });
-      }
-    }
-
+    const handler = getEvent(nextCard.interactive);
+    handler.setup(room, nextCard, io, code);
     room.timeLeft = nextCard.time;
-    io.to(code).emit('timerUpdate', room.timeLeft);
-    room.timerInterval = setInterval(() => {
-      room.timeLeft--;
-      io.to(code).emit('timerUpdate', room.timeLeft);
-      if (room.timeLeft <= 0) {
-        clearInterval(room.timerInterval);
-        finishEvent(code, io);
-      }
-    }, 1000);
+    startTimer(code, io, finishEvent);
+  } else if (nextCard.type === 'Mini Game Card') {
+    const handler = getMinigame(nextCard.minigameType);
+    handler.setup(room, nextCard, io, code);
+    room.minigameFinished = false;
+    room.timeLeft = nextCard.time;
+    startTimer(code, io, finishMinigame);
   }
-
-  io.to(code).emit('newCard', nextCard);
 }
 
 function finishVoting(code, io) {
   const room = rooms[code];
-  if (!room) return;
+  if (!room || room.votingFinished) return;
+  room.votingFinished = true;
 
   const results = {};
   const voters = {};
@@ -203,68 +166,24 @@ function finishVoting(code, io) {
 
 function finishEvent(code, io) {
   const room = rooms[code];
-  if (!room) return;
+  if (!room || room.eventFinished) return;
+  room.eventFinished = true;
+
   const card = room.currentCard;
-  const activePlayers = room.players.filter(p => !p.disconnected);
-  let consequenceText = "";
+  const handler = getEvent(card.interactive);
+  const { consequence } = handler.getResult(room, card);
+  io.to(code).emit('cardResults', { stats: [], consequence });
+}
 
-  if (!card.interactive) {
-    consequenceText = card.subtext || "Acabou o tempo! Bebam todos para compensar!";
-  } else if (card.interactive === 'press') {
-    if (room.presses.length === 0) {
-      consequenceText = `Ninguém clicou? Todos bebem 🍺(${card.drinks})!`;
-    } else if (room.presses.length < activePlayers.length) {
-      const didNotPressIds = activePlayers.filter(p => !room.presses.find(x => x.id === p.id)).map(p => p.id);
-      const didNotPressNames = didNotPressIds.map(id => {
-        const p = room.players.find(x => x.id === id);
-        return `<span style="color: ${p.color}">${p.name}</span>`;
-      }).join(', ');
-      consequenceText = `Muito devagar! ${didNotPressNames}: estão muito bêbedos, bebam 🍺(${card.drinks})`;
-    } else {
-      const r = Math.random();
-      if (r > 0.5) {
-        const slowest = room.presses[room.presses.length - 1];
-        const slowestPlayer = room.players.find(p => p.id === slowest.id);
-        consequenceText = slowestPlayer
-          ? `Mais lento <span style="color: ${slowestPlayer.color}">${slowestPlayer.name}</span>: Estás muito bêbedo, bebe 🍺(${card.drinks})`
-          : `O mais lento foi rápido a sair! Bebe quem estava mais devagar 🍺(${card.drinks})`;
-      } else {
-        const fastest = room.presses[0];
-        const fastestPlayer = room.players.find(p => p.id === fastest.id);
-        consequenceText = fastestPlayer
-          ? `Mais rápido <span style="color: ${fastestPlayer.color}">${fastestPlayer.name}</span>: Estás muito sóbrio, bebe 🍺(${card.drinks + 2})`
-          : `O mais rápido saiu do jogo! Bebe quem estava mais à frente 🍺(${card.drinks + 2})`;
-      }
-    }
-  } else if (card.interactive === 'color_buttons' || card.interactive === 'color_buttons_stroop') {
-    const correct = room.correctColorKey;
-    const wrongPressers = [];
-    const didntPress = [];
-    activePlayers.forEach(p => {
-      const pressed = room.colorPresses ? room.colorPresses[p.id] : undefined;
-      if (pressed === undefined) didntPress.push(p);
-      else if (pressed !== correct) wrongPressers.push(p);
-    });
-    const drinkers = [...wrongPressers, ...didntPress];
-    if (drinkers.length === 0) {
-      consequenceText = `Toda a gente acertou! Ninguém bebe! 🎉`;
-    } else {
-      const names = drinkers.map(p => `<span style="color:${p.color}">${p.name}</span>`).join(', ');
-      consequenceText = `${names} ${drinkers.length === 1 ? 'errou' : 'erraram'} o botão! ${drinkers.length === 1 ? 'Bebe' : 'Bebam'} 🍺(${card.drinks})`;
-    }
-  } else if (card.interactive === 'dont_press') {
-    if (room.presses.length > 0) {
-      const pressedNames = room.presses.map(x => {
-        const p = room.players.find(pl => pl.id === x.id);
-        return `<span style="color: ${p.color}">${p.name}</span>`;
-      }).join(', ');
-      consequenceText = `${pressedNames} não aguentou e carregou! Bebam 🍺(${card.drinks})`;
-    } else {
-      consequenceText = "Ninguém clicou! Muito bem, ninguém bebe!";
-    }
-  }
+function finishMinigame(code, io) {
+  const room = rooms[code];
+  if (!room || room.minigameFinished) return;
+  room.minigameFinished = true;
 
-  io.to(code).emit('cardResults', { stats: [], consequence: consequenceText });
+  const card = room.currentCard;
+  const handler = getMinigame(card.minigameType);
+  const { consequence } = handler.getResult(room, card);
+  io.to(code).emit('cardResults', { stats: [], consequence });
 }
 
 // Helper to generate a random 4-letter room code
@@ -440,36 +359,29 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('colorButtonPress', ({ code, colorKey }) => {
+  socket.on('cardAction', ({ code, payload }) => {
     code = code.toUpperCase();
     const room = rooms[code];
-    if (!room || !room.currentCard) return;
-    const interactive = room.currentCard.interactive;
-    if (interactive !== 'color_buttons' && interactive !== 'color_buttons_stroop') return;
-    if (!room.colorPresses) room.colorPresses = {};
-    if (room.colorPresses[socket.id] !== undefined) return;
-    room.colorPresses[socket.id] = colorKey;
-    const connectedCount = room.players.filter(p => !p.disconnected).length;
-    if (Object.keys(room.colorPresses).length >= connectedCount) {
+    if (!room || !room.currentCard || room.currentCard.type !== 'Event Card' || room.eventFinished) return;
+
+    const handler = getEvent(room.currentCard.interactive);
+    const { done } = handler.onAction(room, socket, payload || {});
+    if (done) {
       clearInterval(room.timerInterval);
       finishEvent(code, io);
     }
   });
 
-  socket.on('eventPress', ({ code }) => {
+  socket.on('minigameAction', ({ code, payload }) => {
     code = code.toUpperCase();
     const room = rooms[code];
-    if (room && room.currentCard && room.currentCard.type === 'Event Card' && room.currentCard.interactive) {
-      if (!room.presses) room.presses = [];
-      if (!room.presses.find(p => p.id === socket.id)) {
-        room.presses.push({ id: socket.id, time: Date.now() });
-        room.presses.sort((a, b) => a.time - b.time);
-        const connectedCount = room.players.filter(p => !p.disconnected).length;
-        if (room.currentCard.interactive === 'press' && room.presses.length >= connectedCount) {
-          clearInterval(room.timerInterval);
-          finishEvent(code, io);
-        }
-      }
+    if (!room || !room.currentCard || room.currentCard.type !== 'Mini Game Card' || room.minigameFinished) return;
+
+    const handler = getMinigame(room.currentCard.minigameType);
+    const { done } = handler.onAction(room, socket, payload || {}, io, code);
+    if (done) {
+      clearInterval(room.timerInterval);
+      finishMinigame(code, io);
     }
   });
 
