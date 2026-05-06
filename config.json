@@ -1,6 +1,6 @@
 {
-    "skipRoom": true,
-    "fakePlayers": 2,
+    "skipRoom": false,
+    "fakePlayers": 0,
     "features": {
         "Drink Card": true,
         "Voting Card": true,
@@ -12,11 +12,11 @@
     },
     "cardProbabilities": {
         "Drink Card": 0.35,
-        "Voting Card": 0.15,
+        "Voting Card": 0.0,
         "Dare Card": 0.15,
         "Event Card": 0.15,
         "Mini Game Card": 0.20
     },
-    "wheelProbability": 0.30,
-    "spellProbability": 0.30
+    "wheelProbability": 0.40,
+    "spellProbability": 0.40
 }
